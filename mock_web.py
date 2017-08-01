@@ -76,8 +76,8 @@ def  selectinfo():
         key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams')
         d = [dict(zip(key, value)) for value in re]
     except:
-        return jsonify({'msg': "ok", "remark": "select data fail"})
-    return jsonify({'msg': "fail", "remark": "", 'data':d})
+        return jsonify({'msg': "fail", "remark": "select data fail"})
+    return jsonify({'msg': "ok", "remark": "", 'data':d})
 
 @app.route('/manage',methods=['POST'])
 def  manage():
