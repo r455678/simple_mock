@@ -1,9 +1,11 @@
 #coding=utf-8
 from  flask import Flask,request,jsonify,make_response
+from flask_cors import *
 import pymysql,json
 from datetime import datetime
 
 app=Flask(__name__)
+CORS(app, supports_credentials=True)
 config ={
         'host':'192.168.20.155',
         'port':3306,
@@ -99,10 +101,10 @@ def  search():
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute("select title,reqparams,methods,domain,description,resparams from mock_config where title like '%"+title+"%'")
+        cur.execute("select id,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where title like '%"+title+"%'")
         re= cur.fetchall()
         conn.close()
-        key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams')
+        key = ('id','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
         d = [dict(zip(key, value)) for value in re]
     except:
         return jsonify({'msg': "fail", "remark": "select data fail"})
@@ -113,10 +115,10 @@ def  searchall():
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute('select title,reqparams,methods,domain,description,resparams from mock_config')
+        cur.execute("select id,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config")
         re= cur.fetchall()
         conn.close()
-        key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams')
+        key = ('id','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
         d = [dict(zip(key, value)) for value in re]
     except:
         return jsonify({'msg': "fail", "remark": "select data fail"})
