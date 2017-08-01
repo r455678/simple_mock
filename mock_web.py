@@ -1,6 +1,6 @@
 #coding=utf-8
-from  flask import Flask,request,jsonify
-import pymysql
+from  flask import Flask,request,jsonify,make_response
+import pymysql,json
 from datetime import datetime
 
 app=Flask(__name__)
@@ -71,11 +71,13 @@ def  selectinfo():
     cur = conn.cursor()
     try:
         cur.execute('select title,reqparams,methods,domain,description,resparams from mock_config where id=%s',(id))
-        re= cur.fetchone()
+        re= cur.fetchall()
         conn.close()
+        key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams')
+        d = [dict(zip(key, value)) for value in re]
     except:
         return jsonify({'msg': "ok", "remark": "select data fail"})
-    return jsonify({'msg': "fail", "remark": "", "title": re[0], "method": re[2], "reqparams": re[1], "domain": re[3],"resparams": re[5], "des": re[4]})
+    return jsonify({'msg': "fail", "remark": "", 'data':d})
 
 @app.route('/manage',methods=['POST'])
 def  manage():
@@ -97,12 +99,14 @@ def  search():
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute('select title,reqparams,methods,domain,description,resparams from mock_config where title=%s',(title))
+        cur.execute("select title,reqparams,methods,domain,description,resparams from mock_config where title like '%"+title+"%'")
         re= cur.fetchall()
         conn.close()
+        key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams')
+        d = [dict(zip(key, value)) for value in re]
     except:
         return jsonify({'msg': "fail", "remark": "select data fail"})
-    return jsonify({'msg': "ok", "remark": "","data": re})
+    return jsonify({'msg': "ok", "remark": "", "data": d})
 
 @app.route('/searchall',methods=['GET'])
 def  searchall():
@@ -112,11 +116,20 @@ def  searchall():
         cur.execute('select title,reqparams,methods,domain,description,resparams from mock_config')
         re= cur.fetchall()
         conn.close()
+        key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams')
+        d = [dict(zip(key, value)) for value in re]
     except:
         return jsonify({'msg': "fail", "remark": "select data fail"})
-    return jsonify({'msg': "ok", "remark": "","data": re})
+    return jsonify({'msg': "ok", "remark": "","data": d})
 
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'msg':'fail','error': '404 Not found'}), 404)
+
+@app.errorhandler(500)
+def not_found(error):
+    return make_response("程序报错，可能是因为叙利亚战争导致", 500)
 
 if __name__=="__main__":
-    app.run(debug=True,threaded=True)
+    app.run(debug=True,threaded=True,port=5202)
 
