@@ -31,10 +31,9 @@ def getparas(domain,method):
 
 def checkpath(domain,varsvalue,method):
     varsvalue.sort()
-    varn=getvar(varsvalue)
     conn = pymysql.connect(**config)
     cur = conn.cursor()
-    cur.execute('select reqparams from mock_config where domain=%s and methods=%s ', (domain,method))
+    cur.execute('select resparams from mock_config where domain=%s and methods=%s ', (domain,method))
     resparams =cur.fetchone()
     size = cur.execute('select * from mock_config where domain=%s', (domain))  # 校验domain是否存在
     size1 = cur.execute('select * from mock_config where methods=%s', (method))  # 校验method是否存在
