@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link rel="stylesheet" type="text/css" href="css/index.css"/>
+		<title>SIMPLE MOCK</title>
+	</head>
+	<body>
+		<div class="wrap">
+			<div class="header clearfix">
+				<h1 class="page-title">SIMPLE MOCK</h1>
+				<div class="ctrl clearfix">
+					<a href="javascript:void(0)" class="del-btn" onclick="del();">- 删除</a>
+					<a href="javascript:void(0)" class="add-btn" id="add-btn">+ 新增</a>
+					<div class="search-box">
+						<input type="text" placeholder="请输入搜索名称" />
+						<a href="javascript:void(0)" class="search-btn" onclick="getAllData();">搜索</a>
+					</div>
+				</div>
+			</div>
+			<div class="cont">
+				<table border="0" cellspacing="0" cellpadding="0" width="96%" class="msg-table" id="msg-table">
+					<tr>
+						<th width="5%"><i class="myckbox myckbox-normal" id="selectAll" onclick="selectAll('#msg-table');"></i></th>
+						<th width="10%">ID</th>
+						<th width="10%">名称</th>
+						<th width="10%">请求方式</th>
+						<th width="15%">方法名称</th>
+						<th width="20%">描述</th>
+						<th width="15%">更新时间</th>
+						<th width="10%">激活状态</th>
+						<th width="5%"></th>
+					</tr>
+				</table>
+				<div class="page" id="page"></div>
+			</div>
+		</div>
+		
+		<!--pop-->
+		<div class="ctrl-pop hidden">
+			<div class="pop-bg"></div>
+			<div class="pop">
+				<h2 class="pop-tit">+ 新增</h2>
+				<div class="pop-cont">
+					<dl>
+						 <dt>名&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;称：</dt>
+						 <dd><input type="text" placeholder="请输入接口名称" class="r-title" /></dd>
+					</dl>
+					<dl>
+						 <dt>方法名称：</dt>
+						 <dd><input type="text" placeholder="请输入接口名称" class="r-domain" /></dd>
+					</dl>
+					<dl>
+						<dt>请求方式：</dt>
+						<dd>
+						 	<select name="" class="r-method">
+						 		<option value="" class="method-sed" hidden="hidden"></option>
+						 		<option value="get">get</option>
+						 		<option value="post">post</option>
+						 	</select>
+						</dd>
+					</dl>
+					<dl>
+						<dt>请求参数：</dt>
+						<dd>
+						 	<textarea class="r-reqparams" name="" rows="" cols=""></textarea>
+						</dd>
+					</dl>
+					<dl>
+						<dt>期待返回：</dt>
+						<dd>
+						 	<textarea class="r-resparams" name="" rows="" cols=""></textarea>
+						</dd>
+					</dl>
+					<dl>
+						<dt>描&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;述：</dt>
+						<dd>
+						 	<textarea class="r-des" name="" rows="" cols=""></textarea>
+						</dd>
+					</dl>
+				</div>
+				<a href="javascript:void(0)" class="sure" data-type="add" onclick="add();">确定</a>
+				<a href="javascript:void(0)" class="cancle">取消</a>
+			</div>
+		</div>
+		
+		<script src="js/jquery-1.8.3.min.js"></script>
+		<script src="js/jqPaginator.min.js"></script>
+		<script src="js/fn.js"></script>
+		<script src="js/indexJQ.js"></script>
+	</body>
+</html>

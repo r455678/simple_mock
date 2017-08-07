@@ -25,22 +25,26 @@ def  query_user():
     domain=request.form['domain']
     conn = pymysql.connect(**config)
     cur = conn.cursor()
+    cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status) '
+                'values (%s,%s,%s,%s,%s,%s,%s) ',(title,reqparams,method,domain,des,resparams,0))
+    conn.commit()
+    conn.close()
+    '''
     try:
-        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status) '
-                    'values (%s,%s,%s,%s,%s,%s,%s) ',(title,reqparams,method,domain,des,resparams,0))
-        conn.commit()
-        conn.close()
     except :
         return jsonify({'msg': "fail", "remark": "save data fail"})
+    '''
     return jsonify({'msg': "ok","remark":""})
 
 @app.route('/delinfo',methods=['POST'])
 def  delinfo():
-    id=request.form['id']
+    id=request.form.getlist('id[]')
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute('delete from mock_config where id=%s',(id))
+        for index in range(len(id)):
+            idd=id[index]
+            cur.execute('delete from mock_config where id=%s',(idd))
         conn.commit()
         conn.close()
     except :
@@ -97,14 +101,14 @@ def  manage():
 
 @app.route('/search',methods=['GET'])
 def  search():
-    title=request.args.get("title")
+    title=request.args.get("title").strip()
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute("select id,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where title like '%"+title+"%'")
+        cur.execute("select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where title like '%"+title+"%'")
         re= cur.fetchall()
         conn.close()
-        key = ('id','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
+        key = ('id','status','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
         d = [dict(zip(key, value)) for value in re]
     except:
         return jsonify({'msg': "fail", "remark": "select data fail"})
@@ -115,10 +119,10 @@ def  searchall():
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute("select id,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config")
+        cur.execute("select id,title,reqparams,methods,domain,description,resparams,status,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config")
         re= cur.fetchall()
         conn.close()
-        key = ('id','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
+        key = ('id','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','status','updateTime')
         d = [dict(zip(key, value)) for value in re]
     except:
         return jsonify({'msg': "fail", "remark": "select data fail"})
