@@ -23,17 +23,15 @@ def  query_user():
     resparams=request.form['resparams']
     des=request.form['des']
     domain=request.form['domain']
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
-    cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status) '
-                'values (%s,%s,%s,%s,%s,%s,%s) ',(title,reqparams,method,domain,des,resparams,0))
-    conn.commit()
-    conn.close()
-    '''
     try:
+        conn = pymysql.connect(**config)
+        cur = conn.cursor()
+        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status) '
+                    'values (%s,%s,%s,%s,%s,%s,%s) ',(title,reqparams,method,domain,des,resparams,0))
+        conn.commit()
+        conn.close()
     except :
         return jsonify({'msg': "fail", "remark": "save data fail"})
-    '''
     return jsonify({'msg': "ok","remark":""})
 
 @app.route('/delinfo',methods=['POST'])
@@ -137,5 +135,5 @@ def not_found(error):
     return make_response("程序报错，可能是因为叙利亚战争导致", 500)
 
 if __name__=="__main__":
-    app.run(debug=True,threaded=True,port=5202)
+    app.run(host='0.0.0.0',debug=True,threaded=True,port=5202)
 
