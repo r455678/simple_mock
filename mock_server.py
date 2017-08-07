@@ -42,25 +42,21 @@ def checkpath(domain,varsvalue,method):
         varsvalue1=getvar(varsvalue)#实际请求
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        cur.execute('select reqparams from mock_config where status=0 and domain=%s and methods=%s',(domain, method))
-        resparams = cur.fetchall()
-        for i in range(len(resparams)):
-            print resparams[i][0]
-            varsvalue2=resparams[i][0] #数据库中的预期请求
+        cur.execute('select reqparams,resparams from mock_config where status=0 and domain=%s and methods=%s',(domain, method))
+        reqparams = cur.fetchall()
+        for i in range(len(reqparams)):
+            varsvalue2=reqparams[i][0] #数据库中的预期请求
             arr = varsvalue2.split('&')
             for i in range(len(arr)):
                 arr[i] = arr[i] + '&'
             arr.sort(reverse=True)
             str = ''.join(arr)[0:-1]
-        if resparamsresparams[i][0] == '':
-            return jsonify({"msg": "对应请求没有配置预期返回值"})
-        if str == varsvalue1:
-            cur.execute('select resparams from mock_config where domain=%s and methods=%s and status=%s', (domain, method,0))
-            resparams = cur.fetchone()
-            conn.close()
-            return resparams[0].encode("utf-8")
-        else:
-            return jsonify({"msg": "请求方法和参数不匹配"})
+            if str==varsvalue1:
+                return reqparams[i-1][1].encode("utf-8")
+            if reqparams[i][0] == '':
+                return jsonify({"msg": "对应请求没有配置预期返回值"})
+            else:
+                return jsonify({"msg": "请求方法和参数不匹配"})
 
 
 def getvar(value):
