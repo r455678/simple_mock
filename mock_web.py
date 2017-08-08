@@ -23,6 +23,10 @@ def  query_user():
     resparams=request.form['resparams']
     des=request.form['des']
     domain=request.form['domain']
+    if not request.json or not 'title' in request.json:
+        abort(400)
+    if title == '':
+        return jsonify({'msg': "fail", "remark": "title不能为空"})
     try:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
@@ -100,10 +104,17 @@ def  manage():
 @app.route('/search',methods=['GET'])
 def  search():
     title=request.args.get("title").strip()
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
+    project_name = request.args.get("project_name")
+    if title is not None and project_name == str(0):
+        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where title like '%" + title + "%'"
+    elif title is not None and project_name is not None:
+        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where project_name=" + str(project_name) + " and title like '%" + title + "%'"
+    else:
+        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where project_name=" + str(project_name)
     try:
-        cur.execute("select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where title like '%"+title+"%'")
+        conn = pymysql.connect(**config)
+        cur = conn.cursor()
+        cur.execute(sql)
         re= cur.fetchall()
         conn.close()
         key = ('id','status','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
@@ -125,6 +136,18 @@ def  searchall():
     except:
         return jsonify({'msg': "fail", "remark": "select data fail"})
     return jsonify({'msg': "ok", "remark": "","data": d})
+
+@app.route('/searchproject',methods=['GET'])
+def  searchproject():
+    conn = pymysql.connect(**config)
+    cur = conn.cursor()
+    try:
+        cur.execute("SELECT DISTINCT(project_name) from mock_config")
+        re= cur.fetchall()
+        conn.close()
+    except:
+        return jsonify({'msg': "fail", "remark": "select data fail"})
+    return jsonify({'msg': "ok", "remark": "","data": re})
 
 @app.errorhandler(404)
 def not_found(error):
