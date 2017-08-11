@@ -23,6 +23,7 @@ def  query_user():
     resparams=request.form['resparams']
     des=request.form['des']
     domain=request.form['domain']
+    project_name=request.form['projectName']
     if not request.json or not 'title' in request.json:
         abort(400)
     if title == '':
@@ -30,8 +31,8 @@ def  query_user():
     try:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status) '
-                    'values (%s,%s,%s,%s,%s,%s,%s) ',(title,reqparams,method,domain,des,resparams,0))
+        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status,project_name) '
+                    'values (%s,%s,%s,%s,%s,%s,%s,%s) ',(title,reqparams,method,domain,des,resparams,0,project_name))
         conn.commit()
         conn.close()
     except :
@@ -62,10 +63,11 @@ def  editinfo():
     des = request.form['reqparams']
     domain = request.form['domain']
     id=request.form['id']
+    project_name=request.form['projectName']
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute('update mock_config set title=%s,reqparams=%s,methods=%s,domain=%s,description=%s,resparams=%s,update_time=%s where id=%s',(title, reqparams, method, domain, des, resparams,datetime.now().strftime('%y-%m-%d %H:%M:%S'),id))
+        cur.execute('update mock_config set title=%s,reqparams=%s,methods=%s,domain=%s,description=%s,resparams=%s,update_time=%s,project_name=%s where id=%s',(title, reqparams, method, domain, des, resparams,datetime.now().strftime('%y-%m-%d %H:%M:%S'),project_name,id))
         conn.commit()
         conn.close()
     except:
@@ -78,10 +80,10 @@ def  selectinfo():
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute('select title,reqparams,methods,domain,description,resparams from mock_config where id=%s',(id))
+        cur.execute('select title,reqparams,methods,domain,description,resparams,project_name from mock_config where id=%s',(id))
         re= cur.fetchall()
         conn.close()
-        key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams')
+        key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams','project_name')
         d = [dict(zip(key, value)) for value in re]
     except:
         return jsonify({'msg': "fail", "remark": "select data fail"})
