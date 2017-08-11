@@ -1,18 +1,43 @@
 var allData=[];
+//获取项目名称
+function projectNameList(){
+	$.ajax({
+		type:"get",
+		url:myUrl+"/searchproject",
+		async:true,
+		dataType:"json",
+		success:function(res){			
+			if(res.msg!="ok"){
+				alert(res.remark);
+				return;
+			}
+			var _data=res.data;
+			var optionHtml="";
+			for (var i=0;i<_data.length;i++) {
+				optionHtml+='<option value='+_data[i]+'>'+_data[i]+'</option>'
+			}
+			$(".product-name").append(optionHtml);
+		}
+	})
+}
 //获取总数据  && 搜索
 function getAllData(){
 	var _self=$(event.target);
 	var condition=$(".search-box input").val();
-	var _url="/searchall";
-	if(condition){
-		_url="/search";
+	var _project_name=$(".product-name option:selected").attr("value");
+	var _url="/search";
+	if(!condition && !_project_name){
+		_url="/searchall";
 	}
 	$.ajax({
 		type:"get",
 		url:myUrl+_url,
 		async:true,
 		dataType:"json",
-		data:{title:condition},
+		data:{
+			title:condition,
+			project_name:_project_name
+		},
 		success:function(res){			
 			if(res.msg!="ok"){
 				alert(res.remark);
@@ -23,10 +48,11 @@ function getAllData(){
 			currentPage=$(".page-active a").text();
 			dataShow(allData,1);
 			$('#page').jqPaginator({
-			    totalPages: allData.length,
-			    visiblePages: 6,
+			    totalCounts: allData.length,
+			    pageSize:10,
 			    currentPage: 1,
 				activeClass:"page-active",
+				disableClass:"page-disabled",
 			    first: '<li class="first"><a href="javascript:void(0);">首页</a></li>',
 			    prev: '<li class="prev"><a href="javascript:void(0);">上一页</a></li>',
 			    next: '<li class="next"><a href="javascript:void(0);">下一页</a></li>',
@@ -214,14 +240,21 @@ function del(){
 function edit(){
 	var current_id=$(event.target).closest("tr").attr("id");
 	var currentTr=$("#msg-table tr[id="+current_id+"]");
+	var _title=currentTr.find(".t-title").text();
+	var _domain=currentTr.find(".t-domain").text();
+	var _methods=currentTr.find(".t-methods").text();
+	var _reqparams=currentTr.next().find(".dt-cont-s").text();
+	var _resparams=currentTr.next().find(".dt-cont-y").text();
+	var _des=currentTr.find(".describle").text();
+	
 	$(".ctrl-pop").attr("current_id",current_id);
 	$(".ctrl-pop .pop-tit").text("+ 编辑");
-	$(".ctrl-pop .r-title").val(currentTr.find(".t-title").text());
-	$(".ctrl-pop .r-domain").val(currentTr.find(".t-domain").text());
-	$(".ctrl-pop .r-method .method-sed").prop("selected","selected").text(currentTr.find(".t-methods").text());
-	$(".ctrl-pop .r-reqparams").val(currentTr.next().find(".dt-cont-s").text());
-	$(".ctrl-pop .r-resparams").val(currentTr.next().find(".dt-cont-y").text());
-	$(".ctrl-pop .r-des").val(currentTr.find(".describle").text());
+	$(".ctrl-pop .r-title").val(_title=="-"?"":_title);
+	$(".ctrl-pop .r-domain").val(_domain=="-"?"":_domain);
+	$(".ctrl-pop .r-method .method-sed").prop("selected","selected").text(_methods=="-"?"":_methods);
+	$(".ctrl-pop .r-reqparams").val(_reqparams=="-"?"":_reqparams);
+	$(".ctrl-pop .r-resparams").val(_resparams=="-"?"":_resparams);
+	$(".ctrl-pop .r-des").val(_des=="-"?"":_des);
 }
 
 

@@ -1,5 +1,5 @@
 #coding=utf-8
-from  flask import Flask,request,jsonify,make_response
+from  flask import Flask,request,jsonify,make_response,abort
 from flask_cors import *
 import pymysql,json
 from datetime import datetime
@@ -108,9 +108,9 @@ def  search():
     if title is not None and project_name == str(0):
         sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where title like '%" + title + "%'"
     elif title is not None and project_name is not None:
-        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where project_name=" + str(project_name) + " and title like '%" + title + "%'"
+        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where project_name='" + project_name + "' and title like '%" + title + "%'"
     else:
-        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where project_name=" + str(project_name)
+        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config where project_name='" + project_name+"'"
     try:
         conn = pymysql.connect(**config)
         cur = conn.cursor()

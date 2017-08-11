@@ -1,7 +1,8 @@
 var myUrl="http://127.0.0.1:5202";
 
 $(function(){
-	getAllData();
+	getAllData();  //初始化页面数据
+	projectNameList(); //获取项目名称list
 	//add btn
 	$("#add-btn").click(function(){
 		$(".ctrl-pop .pop-tit").text("+ 新增");
