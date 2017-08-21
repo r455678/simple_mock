@@ -14,9 +14,11 @@ CREATE TABLE `mock_config` (
   `resparams` varchar(500) DEFAULT NULL,
   `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `status` int(5) DEFAULT NULL,
+  `project_name` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Records of mock_config
 -- ----------------------------
+INSERT INTO `mock_config` VALUES ('1', '请求登陆11', 'var1=1&var2=2&var3=3', 'post', '/login/manageLogin2', 'var1=1&var2=2&var3=3', '{\"status\":\"fail\",\"msg\":\"111用户名或密码错误,密码输错超过5次将被锁定哦！已输错1次\",\"data\":\"\",\"externData\":null}', '2017-08-10 17:54:05', '0', '营销平台');
