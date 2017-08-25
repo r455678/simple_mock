@@ -1,7 +1,7 @@
 #coding=utf-8
 from  flask import Flask,request,jsonify,make_response,abort
 from flask_cors import *
-import pymysql,json
+import pymysql,json,xlrd
 from datetime import datetime
 
 app=Flask(__name__)
@@ -14,6 +14,38 @@ config ={
         'db':'cts',
         'charset':'utf8',
         }
+
+save_path='D:\\'
+ALLOWED_EXTENSIONS = set(['xls', 'xlsx'])
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
+@app.route('/import_excel', methods=[ 'POST'])
+def import_device():
+    file = request.files['file']
+    filename = file.filename
+    # 判断文件名是否合规
+    if file and allowed_file(filename):
+        file.save(save_path+filename)
+        excelName = save_path+filename
+        bk = xlrd.open_workbook(excelName, encoding_override="utf-8")
+        sh = bk.sheets()[0]  # 因为Excel里只有sheet1有数据，如果都有可以使用注释掉的语句
+        ncols = sh.ncols#列
+
+        conn = pymysql.connect(**config)
+        cur = conn.cursor()
+        for j in range(ncols+1):
+            if j > ncols:
+                return jsonify({'msg': "ok", "remark": "上传成功"})
+            else:
+                lvalues = sh.row_values(j+1)
+                cur.execute('insert into mock_config values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(None,lvalues[0],lvalues[4],lvalues[3],lvalues[2],lvalues[6],lvalues[5],datetime.now(),0,lvalues[1]))
+                conn.commit()
+        conn.close()
+        return jsonify({'msg': "ok", "remark": "上传成功"})
+    else:
+        return jsonify({'msg': "fail", "remark": "上传文件不符合格式要求"})
 
 @app.route('/addinfo',methods=['POST'])
 def  query_user():
