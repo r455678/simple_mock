@@ -11,6 +11,10 @@
 			<div class="header clearfix">
 				<h1 class="page-title">SIMPLE MOCK</h1>
 				<div class="ctrl clearfix">
+					<div class="file-up">
+						<p class="file-tip">批量导入EXCEL数据:</p>
+						<input id="fileupload" type="file" name="files[]" data-url="http://127.0.0.1:5202/import_excel" multiple>					
+					</div>
 					<a href="javascript:void(0)" class="del-btn" onclick="del();">- 删除</a>
 					<a href="javascript:void(0)" class="add-btn" id="add-btn">+ 新增</a>
 					<div class="search-box">
@@ -20,7 +24,6 @@
 					<select name="" class="myselect product-name">
 						<option value="0" hidden>请选择项目名称</option>
 						<option value="0">全部</option>
-						
 					</select>
 				</div>
 			</div>
@@ -94,5 +97,9 @@
 		<script src="js/jqPaginator.min.js"></script>
 		<script src="js/fn.js"></script>
 		<script src="js/indexJQ.js"></script>
+		<!--fiel up-->
+		<script src="js/jQuery-File-Upload-master/jquery.ui.widget.js"></script>
+		<script src="js/jQuery-File-Upload-master/jquery.iframe-transport.js"></script>
+		<script src="js/jQuery-File-Upload-master/jquery.fileupload.js"></script>
 	</body>
 </html>

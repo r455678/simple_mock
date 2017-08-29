@@ -31,7 +31,19 @@ $(function(){
 		}
 		return false;
 	})
-	
+//	file up
+	$('#fileupload').fileupload({
+        add: function (e, data) {
+            data.submit();
+        },
+        done: function (e, data) {
+        	if(data._response.result.msg=="fail"){
+        		alert(data._response.result.remark);
+        		return;
+        	}
+            alert('上传成功！');
+        }
+    });
 
 
 })

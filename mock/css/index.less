@@ -25,25 +25,28 @@ a{text-decoration: none;}
 }
 //var end
 
-.header .page-title{ float: left; width: 40%; height: 94px; padding-left: 2%; line-height: 94px; font-size: 34px; color: #108ee9;}
+.wrap{ min-width: 1400px;}
+.header .page-title{ float: left; width: 20%;min-width: 277px; height: 94px; padding-left: 2%; line-height: 94px; font-size: 34px; color: #108ee9;}
 .header .ctrl{ 
     float: right; 
-    width: 50%; 
+    width: 75%;
     padding-right: 2%;
     .search-box{
         float: right;
-        width: 325px;
+        width: 30%;
         height: 28px;
         margin-top: 52px;
         border: 1px solid @border-color;   
         border-radius: 4px; 
         margin-right: 15px;
-        input{ float: left; width: 260px; height: 28px; padding: 0 5px;border-radius: 4px;}
-        .search-btn{float: left; width: 55px; height: 30px; line-height: 30px; margin-top: -1px; .btn;}
+        input{ float: left; width: 70%; height: 28px; padding: 0 5px;border-radius: 4px;}
+        .search-btn{float: right; width: 55px; height: 30px; line-height: 30px; margin-top: -1px; .btn;}
     }
-    .myselect{ float: right; width: 260px; height: 30px; margin-top: 52px; margin-right: 10px; line-height: 30px; border-radius: 4px; border: 1px solid @border-color;}
+    .file-up{ width: 165px; float: right; margin-top: 44px;}
+    .file-tip{ color: #ef6d16;}
+    .myselect{ float: right; width: 30%; height: 30px; margin-top: 52px; margin-right: 10px; line-height: 30px; border-radius: 4px; border: 1px solid @border-color;}
     .add-btn{ float: right; width: 92px; height: 30px;margin-top: 52px; line-height: 30px; .btn; margin-right: 10px;}
-    .del-btn{ float: right; width: 92px; height: 30px;margin-top: 52px; line-height: 30px; .btn(@them-yellow);}
+    .del-btn{ float: right; width: 92px; height: 30px;margin-top: 52px; line-height: 30px; .btn(@them-yellow); margin-right: 10px;}
 }
 .msg-table{
     margin-left: 2%;
@@ -134,4 +137,5 @@ a{text-decoration: none;}
     }
     .sure{ float: left; width: 92px; line-height: 30px; .btn; margin: 0 10px 0 269px;}
     .cancle{ float: left; width: 92px; line-height: 30px; .btn;}
+    
 }

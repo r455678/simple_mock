@@ -23,7 +23,7 @@ def allowed_file(filename):
 
 @app.route('/import_excel', methods=[ 'POST'])
 def import_device():
-    file = request.files['file']
+    file = request.files['files[]']
     filename = file.filename
     # 判断文件名是否合规
     if file and allowed_file(filename):
@@ -39,9 +39,12 @@ def import_device():
             if j > ncols:
                 return jsonify({'msg': "ok", "remark": "上传成功"})
             else:
-                lvalues = sh.row_values(j+1)
-                cur.execute('insert into mock_config values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(None,lvalues[0],lvalues[4],lvalues[3],lvalues[2],lvalues[6],lvalues[5],datetime.now(),0,lvalues[1]))
-                conn.commit()
+                try:
+                    lvalues = sh.row_values(j+1)
+                    cur.execute('insert into mock_config values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(None,lvalues[0],lvalues[4],lvalues[3],lvalues[2],lvalues[6],lvalues[5],datetime.now(),0,lvalues[1]))
+                    conn.commit()
+                except:
+                    return jsonify({'msg': "fail", "remark": "解析失败"})
         conn.close()
         return jsonify({'msg': "ok", "remark": "上传成功"})
     else:
