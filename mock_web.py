@@ -1,7 +1,7 @@
 #coding=utf-8
 from  flask import Flask,request,jsonify,make_response,abort
 from flask_cors import *
-import pymysql,json,xlrd
+import pymysql,xlrd
 from datetime import datetime
 
 app=Flask(__name__)
@@ -142,16 +142,17 @@ def  manage():
 def  search():
     title=request.args.get("title").strip()
     project_name = request.args.get("project_name")
-    if title is not None and project_name == str(0):
-        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like '%" + title + "%'"
-    elif title is not None and project_name is not None:
-        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where project_name='" + project_name + "' and title like '%" + title + "%'"
-    else:
-        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where project_name='" + project_name+"'"
     try:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        cur.execute(sql)
+        if project_name == str(0):
+            sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like '%%%%%s%%%%' "
+            sql = sql % ((title))
+            cur.execute(sql, )
+        else:
+            sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like '%%%%%s%%%%' and project_name='%s'"
+            sql = sql % ((title, project_name))
+            cur.execute(sql, )
         re= cur.fetchall()
         conn.close()
         key = ('id','status','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
