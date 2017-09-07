@@ -16,7 +16,7 @@ config ={
         }
 
 save_path='D:\\'
-ALLOWED_EXTENSIONS = set(['xls', 'xlsx'])
+ALLOWED_EXTENSIONS = ['xls', 'xlsx']
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
@@ -131,7 +131,7 @@ def manage():
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute('update mock_config set status=%s where id=%s',(status,id))
+        cur.execute('update mock_config set status=%s whe   re id=%s',(status,id))
         conn.commit()
         conn.close()
     except:
