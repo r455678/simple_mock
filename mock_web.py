@@ -51,7 +51,7 @@ def import_device():
         return jsonify({'msg': "fail", "remark": "上传文件不符合格式要求"})
 
 @app.route('/addinfo',methods=['POST'])
-def  query_user():
+def query_user():
     title=request.form['title']
     method=request.form['method']
     reqparams=request.form['reqparams']
@@ -75,7 +75,7 @@ def  query_user():
     return jsonify({'msg': "ok","remark":""})
 
 @app.route('/delinfo',methods=['POST'])
-def  delinfo():
+def delinfo():
     id=request.form.getlist('id[]')
     conn = pymysql.connect(**config)
     cur = conn.cursor()
@@ -90,7 +90,7 @@ def  delinfo():
     return jsonify({'msg': "ok","remark":""})
 
 @app.route('/editinfo',methods=['POST'])
-def  editinfo():
+def editinfo():
     title = request.form['title']
     method = request.form['method']
     reqparams = request.form['reqparams']
@@ -110,7 +110,7 @@ def  editinfo():
     return jsonify({'msg': "ok", "remark": ""})
 
 @app.route('/selectinfo',methods=['GET'])
-def  selectinfo():
+def selectinfo():
     id=request.args.get("id")
     conn = pymysql.connect(**config)
     cur = conn.cursor()
@@ -125,7 +125,7 @@ def  selectinfo():
     return jsonify({'msg': "ok", "remark": "", 'data':d})
 
 @app.route('/manage',methods=['POST'])
-def  manage():
+def manage():
     id = request.form['id']
     status = request.form['status']
     conn = pymysql.connect(**config)
@@ -139,7 +139,7 @@ def  manage():
     return jsonify({'msg': "ok", "remark": ""})
 
 @app.route('/search',methods=['GET'])
-def  search():
+def search():
     title=request.args.get("title").strip()
     project_name = request.args.get("project_name")
     try:
@@ -162,7 +162,7 @@ def  search():
     return jsonify({'msg': "ok", "remark": "", "data": d})
 
 @app.route('/searchall',methods=['GET'])
-def  searchall():
+def searchall():
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
@@ -176,7 +176,7 @@ def  searchall():
     return jsonify({'msg': "ok", "remark": "","data": d})
 
 @app.route('/searchproject',methods=['GET'])
-def  searchproject():
+def searchproject():
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
@@ -186,6 +186,20 @@ def  searchproject():
     except:
         return jsonify({'msg': "fail", "remark": "select data fail"})
     return jsonify({'msg': "ok", "remark": "","data": re})
+
+@app.route('/copy',methods=['POST'])
+def copy():
+    id = request.form['id']
+    conn = pymysql.connect(**config)
+    cur = conn.cursor()
+    try:
+        cur.execute("insert into mock_config(title,reqparams,methods,domain,description,resparams,update_time,status,project_name) "
+                    "select title,reqparams,methods,domain,description,resparams,update_time,status,project_name from mock_config where id=%s",id)
+        conn.commit()
+        conn.close()
+    except:
+        return jsonify({'msg': "fail", "remark": "select data fail"})
+    return jsonify({'msg': "ok", "remark": ""})
 
 @app.errorhandler(404)
 def not_found(error):
