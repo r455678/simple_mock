@@ -2,7 +2,11 @@
 from  flask import Flask,request,jsonify,make_response,abort
 from flask_cors import *
 import pymysql,xlrd
+from flask_restful import reqparse
 from datetime import datetime
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 app=Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -17,6 +21,8 @@ config ={
 
 save_path='D:\\'
 ALLOWED_EXTENSIONS = ['xls', 'xlsx']
+parser = reqparse.RequestParser()
+
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
@@ -32,7 +38,6 @@ def import_device():
         bk = xlrd.open_workbook(excelName, encoding_override="utf-8")
         sh = bk.sheets()[0]  # 因为Excel里只有sheet1有数据，如果都有可以使用注释掉的语句
         ncols = sh.ncols#列
-
         conn = pymysql.connect(**config)
         cur = conn.cursor()
         for j in range(ncols+1):
@@ -52,22 +57,20 @@ def import_device():
 
 @app.route('/addinfo',methods=['POST'])
 def query_user():
-    title=request.form['title']
-    method=request.form['method']
-    reqparams=request.form['reqparams']
-    resparams=request.form['resparams']
-    des=request.form['des']
-    domain=request.form['domain']
-    project_name=request.form['projectName']
-    if not request.json or not 'title' in request.json:
-        abort(400)
-    if title == '':
-        return jsonify({'msg': "fail", "remark": "title不能为空"})
+    parser.add_argument('title', type=str,required=True)
+    parser.add_argument('method', type=str,required=True)
+    parser.add_argument('reqparams', type=str, required=True)
+    parser.add_argument('resparams', type=str, required=True)
+    parser.add_argument('des', type=str)
+    parser.add_argument('domain', type=str,required=True)
+    parser.add_argument('projectName', type=str,required=True)
+    args = parser.parse_args()
     try:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
         cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status,project_name) '
-                    'values (%s,%s,%s,%s,%s,%s,%s,%s) ',(title,reqparams,method,domain,des,resparams,0,project_name))
+                    'values (%s,%s,%s,%s,%s,%s,%s,%s) ',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'),
+                                                         args.get('des'),args.get('resparams'),0,args.get('project_name')))
         conn.commit()
         conn.close()
     except :
@@ -77,6 +80,7 @@ def query_user():
 @app.route('/delinfo',methods=['POST'])
 def delinfo():
     id=request.form.getlist('id[]')
+
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
@@ -91,18 +95,19 @@ def delinfo():
 
 @app.route('/editinfo',methods=['POST'])
 def editinfo():
-    title = request.form['title']
-    method = request.form['method']
-    reqparams = request.form['reqparams']
-    resparams = request.form['resparams']
-    des = request.form['reqparams']
-    domain = request.form['domain']
-    id=request.form['id']
-    project_name=request.form['projectName']
+    parser.add_argument('title', type=str, required=True)
+    parser.add_argument('method', type=str, required=True)
+    parser.add_argument('reqparams', type=str, required=True)
+    parser.add_argument('resparams', type=str, required=True)
+    parser.add_argument('des', type=str)
+    parser.add_argument('domain', type=str, required=True)
+    parser.add_argument('projectName', type=str, required=True)
+    args = parser.parse_args()
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute('update mock_config set title=%s,reqparams=%s,methods=%s,domain=%s,description=%s,resparams=%s,update_time=%s,project_name=%s where id=%s',(title, reqparams, method, domain, des, resparams,datetime.now().strftime('%y-%m-%d %H:%M:%S'),project_name,id))
+        cur.execute('update mock_config set title=%s,reqparams=%s,methods=%s,domain=%s,description=%s,resparams=%s,update_time=%s,project_name=%s where id=%s'
+                    ,(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'), args.get('des'), args.get('resparams'),datetime.now().strftime('%y-%m-%d %H:%M:%S'),args.get('projectName'),id))
         conn.commit()
         conn.close()
     except:
@@ -111,11 +116,12 @@ def editinfo():
 
 @app.route('/selectinfo',methods=['GET'])
 def selectinfo():
-    id=request.args.get("id")
+    parser.add_argument('id', type=int, required=True)
+    args = parser.parse_args()
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute('select title,reqparams,methods,domain,description,resparams,project_name from mock_config where id=%s',(id))
+        cur.execute('select title,reqparams,methods,domain,description,resparams,project_name from mock_config where id=%s',(args.get('id')))
         re= cur.fetchall()
         conn.close()
         key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams','project_name')
@@ -126,12 +132,13 @@ def selectinfo():
 
 @app.route('/manage',methods=['POST'])
 def manage():
-    id = request.form['id']
-    status = request.form['status']
+    parser.add_argument('id', type=int, required=True)
+    parser.add_argument('status', type=int, required=True)
+    args = parser.parse_args()
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute('update mock_config set status=%s where id=%s',(status,id))
+        cur.execute('update mock_config set status=%s where id=%s',(args.get('status'),args.get('id')))
         conn.commit()
         conn.close()
     except:
@@ -140,18 +147,19 @@ def manage():
 
 @app.route('/search',methods=['GET'])
 def search():
-    title=request.args.get("title").strip()
-    project_name = request.args.get("project_name")
+    parser.add_argument('title', type=str, required=True)
+    parser.add_argument('project_name', type=str)
+    args = parser.parse_args()
     try:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        if project_name == str(0):
+        if args.get('project_name') == None:
             sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like '%%%%%s%%%%' "
-            sql = sql % ((title))
+            sql = sql % ((args.get('title').strip()))
             cur.execute(sql, )
         else:
             sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like '%%%%%s%%%%' and project_name='%s'"
-            sql = sql % ((title, project_name))
+            sql = sql % ((args.get('title').strip(), args.get('project_name')))
             cur.execute(sql, )
         re= cur.fetchall()
         conn.close()
@@ -189,12 +197,13 @@ def searchproject():
 
 @app.route('/copy',methods=['POST'])
 def copy():
-    id = request.form['id']
+    parser.add_argument('id', type=int, required=True)
+    args = parser.parse_args()
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
         cur.execute("insert into mock_config(title,reqparams,methods,domain,description,resparams,update_time,status,project_name) "
-                    "select title,reqparams,methods,domain,description,resparams,update_time,status,project_name from mock_config where id=%s",id)
+                    "select title,reqparams,methods,domain,description,resparams,update_time,status,project_name from mock_config where id=%s",args.get('id'))
         conn.commit()
         conn.close()
     except:
@@ -211,4 +220,3 @@ def not_found(error):
 
 if __name__=="__main__":
     app.run(host='0.0.0.0',debug=True,threaded=True,port=5202)
-
