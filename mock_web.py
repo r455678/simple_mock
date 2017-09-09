@@ -21,7 +21,6 @@ config ={
 
 save_path='D:\\'
 ALLOWED_EXTENSIONS = ['xls', 'xlsx']
-parser = reqparse.RequestParser()
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -57,13 +56,14 @@ def import_device():
 
 @app.route('/addinfo',methods=['POST'])
 def query_user():
+    parser = reqparse.RequestParser()
     parser.add_argument('title', type=str,required=True)
     parser.add_argument('method', type=str,required=True)
     parser.add_argument('reqparams', type=str, required=True)
     parser.add_argument('resparams', type=str, required=True)
     parser.add_argument('des', type=str)
     parser.add_argument('domain', type=str,required=True)
-    parser.add_argument('projectName', type=str,required=True)
+    #parser.add_argument('projectName', type=str,required=True)
     args = parser.parse_args()
     try:
         conn = pymysql.connect(**config)
@@ -79,8 +79,11 @@ def query_user():
 
 @app.route('/delinfo',methods=['POST'])
 def delinfo():
-    id=request.form.getlist('id[]')
-
+    parser = reqparse.RequestParser()
+    parser.add_argument('id[]', type=str, required=True,action='append')
+    args = parser.parse_args()
+    print args
+    id=args.get('id[]')
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
@@ -95,13 +98,14 @@ def delinfo():
 
 @app.route('/editinfo',methods=['POST'])
 def editinfo():
+    parser = reqparse.RequestParser()
     parser.add_argument('title', type=str, required=True)
     parser.add_argument('method', type=str, required=True)
     parser.add_argument('reqparams', type=str, required=True)
     parser.add_argument('resparams', type=str, required=True)
     parser.add_argument('des', type=str)
     parser.add_argument('domain', type=str, required=True)
-    parser.add_argument('projectName', type=str, required=True)
+    #parser.add_argument('projectName', type=str, required=True)
     args = parser.parse_args()
     conn = pymysql.connect(**config)
     cur = conn.cursor()
@@ -116,6 +120,7 @@ def editinfo():
 
 @app.route('/selectinfo',methods=['GET'])
 def selectinfo():
+    parser = reqparse.RequestParser()
     parser.add_argument('id', type=int, required=True)
     args = parser.parse_args()
     conn = pymysql.connect(**config)
@@ -132,6 +137,7 @@ def selectinfo():
 
 @app.route('/manage',methods=['POST'])
 def manage():
+    parser = reqparse.RequestParser()
     parser.add_argument('id', type=int, required=True)
     parser.add_argument('status', type=int, required=True)
     args = parser.parse_args()
@@ -147,13 +153,14 @@ def manage():
 
 @app.route('/search',methods=['GET'])
 def search():
-    parser.add_argument('title', type=str, required=True)
-    parser.add_argument('project_name', type=str)
+    parser = reqparse.RequestParser()
+    parser.add_argument('title', type=str)
+    parser.add_argument('project_name', type=str, required=True)
     args = parser.parse_args()
     try:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        if args.get('project_name') == None:
+        if args.get('project_name') == str(0):
             sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like '%%%%%s%%%%' "
             sql = sql % ((args.get('title').strip()))
             cur.execute(sql, )
@@ -197,6 +204,7 @@ def searchproject():
 
 @app.route('/copy',methods=['POST'])
 def copy():
+    parser = reqparse.RequestParser()
     parser.add_argument('id', type=int, required=True)
     args = parser.parse_args()
     conn = pymysql.connect(**config)
