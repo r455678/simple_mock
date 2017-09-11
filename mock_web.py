@@ -161,13 +161,15 @@ def search():
         conn = pymysql.connect(**config)
         cur = conn.cursor()
         if args.get('project_name') == str(0):
-            sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like '%%%%%s%%%%' "
-            sql = sql % ((args.get('title').strip()))
-            cur.execute(sql, )
+            sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s"
+            value=args.get('title').strip()
+            cur.execute(sql, value+'%%')
         else:
-            sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like '%%%%%s%%%%' and project_name='%s'"
-            sql = sql % ((args.get('title').strip(), args.get('project_name')))
-            cur.execute(sql, )
+            sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s and project_name=%s"
+            values = (args.get('title')+'%%' .strip(),args.get('project_name'))
+            print values
+            #sql = sql % ((args.get('title').strip(), args.get('project_name')))
+            cur.execute(sql,values)
         re= cur.fetchall()
         conn.close()
         key = ('id','status','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
