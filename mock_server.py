@@ -1,18 +1,31 @@
 # -*- coding: utf-8 -*-
 from flask import jsonify, Flask,make_response,request
 import pymysql
+import ConfigParser
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 app = Flask(__name__)
 
+cf = ConfigParser.ConfigParser()
+path = 'db.config'
+cf.read(path)
+cf.read(path)
+secs = cf.sections()
+_host= cf.get("database","dbhost")
+_port= cf.get("database","dbport")
+_dbname=cf.get("database","dbname")
+_dbuser=cf.get("database","dbuser")
+_dbpassword=cf.get("database","dbpassword")
+_path=cf.get("path","filepath")
+
 config ={
-        'host':'192.168.20.155',
-        'port':3306,
-        'user':'test',
-        'passwd':'test123',
-        'db':'cts',
+        'host':_host,
+        'port':int(_port),
+        'user':_dbuser,
+        'passwd':_dbpassword,
+        'db':_dbname,
         'charset':'utf8',
         }
 

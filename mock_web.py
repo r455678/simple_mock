@@ -4,23 +4,36 @@ from flask_cors import *
 import pymysql,xlrd
 from flask_restful import reqparse
 from datetime import datetime
+import ConfigParser
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-app=Flask(__name__)
-CORS(app, supports_credentials=True)
+cf = ConfigParser.ConfigParser()
+path = 'db.config'
+cf.read(path)
+cf.read(path)
+secs = cf.sections()
+_host= cf.get("database","dbhost")
+_port= cf.get("database","dbport")
+_dbname=cf.get("database","dbname")
+_dbuser=cf.get("database","dbuser")
+_dbpassword=cf.get("database","dbpassword")
+_path=cf.get("path","filepath")
+
 config ={
-        'host':'192.168.20.155',
-        'port':3306,
-        'user':'test',
-        'passwd':'test123',
-        'db':'cts',
+        'host':_host,
+        'port':int(_port),
+        'user':_dbuser,
+        'passwd':_dbpassword,
+        'db':_dbname,
         'charset':'utf8',
         }
 
-save_path='D:\\'
+save_path=_path
 ALLOWED_EXTENSIONS = ['xls', 'xlsx']
+app=Flask(__name__)
+CORS(app, supports_credentials=True)
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -167,7 +180,6 @@ def search():
         else:
             sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s and project_name=%s"
             values = (args.get('title')+'%%' .strip(),args.get('project_name'))
-            print values
             #sql = sql % ((args.get('title').strip(), args.get('project_name')))
             cur.execute(sql,values)
         re= cur.fetchall()
