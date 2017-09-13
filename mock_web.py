@@ -180,7 +180,6 @@ def search():
         else:
             sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s and project_name=%s"
             values = (args.get('title')+'%%' .strip(),args.get('project_name'))
-            #sql = sql % ((args.get('title').strip(), args.get('project_name')))
             cur.execute(sql,values)
         re= cur.fetchall()
         conn.close()

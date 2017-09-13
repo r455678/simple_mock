@@ -93,13 +93,19 @@ def getre(path,varsvalue):
 @app.route('/<path:path>/<path:path1>', methods=['GET','POST'])
 def get_all_task(path,path1):
     npath='/' + path + '/' + path1
-    varsvalue = request.args.items()
+    if request.method=='GET':
+        varsvalue = request.args.items()
+    else:
+        varsvalue = request.form.items()
     r=getre(npath,varsvalue)
     return r
 
 @app.route('/<path:path>', methods=['GET','POST'])
 def get_all_task1(path):
-    varsvalue = request.args.items()
+    if request.method=='GET':
+        varsvalue = request.args.items()
+    else:
+        varsvalue = request.form.items()
     r = getre(path, varsvalue)
     return r
 
