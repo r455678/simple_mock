@@ -2,7 +2,7 @@
 from flask import jsonify, Flask,make_response,request
 import pymysql
 import ConfigParser
-import sys
+import sys,json
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -30,6 +30,7 @@ config ={
         }
 
 def checkpath(domain,varsvalue,method):
+    method=method.lower()
     varsvalue.sort()
     conn = pymysql.connect(**config)
     cur = conn.cursor()
@@ -40,7 +41,6 @@ def checkpath(domain,varsvalue,method):
         return jsonify({"msg": "请求方法不存在"})
     elif size1 == 0:
         return jsonify({"msg": "请求模式不存在"})
-
     if len(varsvalue) == 0:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
@@ -55,21 +55,28 @@ def checkpath(domain,varsvalue,method):
         varsvalue1=getvar(varsvalue)#实际请求
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        cur.execute('select reqparams,resparams from mock_config where status=0 and domain=%s and methods=%s',(domain, method))
+        cur.execute('select reqparams,resparams,methods from mock_config where status=0 and domain=%s and methods=%s',(domain, method))
         reqparams = cur.fetchall()
-        for i in range(len(reqparams)):
-            varsvalue2=reqparams[i][0] #数据库中的预期请求
+        varsvalue2 = reqparams[0][0]  # 数据库中的预期请求参数
+        if reqparams[0][2].lower()=='get':
             arr = varsvalue2.split('&')
             for i in range(len(arr)):
                 arr[i] = arr[i] + '&'
             arr.sort(reverse=True)
             str = ''.join(arr)[0:-1]
             if str==varsvalue1:
-                return reqparams[i-1][1].encode("utf-8")
-            if reqparams[i][0] == '':
+                return reqparams[0][1].encode("utf-8")
+            if reqparams[0][0] == '':
                 return jsonify({"msg": "对应请求没有配置预期返回值"})
             else:
                 return jsonify({"msg": "请求方法和参数不匹配"})
+        elif reqparams[0][2].lower()=='post':
+            varsvalue1 = varsvalue1.replace("\t", "").replace("\r", "").strip()[:-1]
+            varsvalue2 = varsvalue2.replace("\t", "").replace("\r", "").strip()
+            if varsvalue1 == varsvalue2:
+                return reqparams[0][1].encode("utf-8")
+        else:
+            return jsonify({"msg": "暂不支持该类型请求方法"})
 
 
 def getvar(value):
@@ -102,6 +109,7 @@ def get_all_task(path,path1):
 
 @app.route('/<path:path>', methods=['GET','POST'])
 def get_all_task1(path):
+    path='/'+path
     if request.method=='GET':
         varsvalue = request.args.items()
     else:
