@@ -77,17 +77,18 @@ def query_user():
     parser.add_argument('des', type=str)
     parser.add_argument('domain', type=str,required=True)
     #parser.add_argument('projectName', type=str,required=True)
+    #,args.get('project_name')
+    #,project_name
     args = parser.parse_args()
     try:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status,project_name) '
-                    'values (%s,%s,%s,%s,%s,%s,%s,%s) ',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'),
-                                                         args.get('des'),args.get('resparams'),0,args.get('project_name')))
+        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status) '
+                    'values (%s,%s,%s,%s,%s,%s,%s) ',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'),args.get('des'),args.get('resparams'),0))
         conn.commit()
         conn.close()
     except :
-        return jsonify({'msg': "fail", "remark": "save data fail"})
+        return jsonify({'msg': "fail", "remark": "新增数据失败"})
     return jsonify({'msg': "ok","remark":""})
 
 @app.route('/delinfo',methods=['POST'])
@@ -106,7 +107,7 @@ def delinfo():
         conn.commit()
         conn.close()
     except :
-        return jsonify({'msg': "fail", "remark": "delete fail"})
+        return jsonify({'msg': "fail", "remark": "删除数据失败"})
     return jsonify({'msg': "ok","remark":""})
 
 @app.route('/editinfo',methods=['POST'])
@@ -118,17 +119,19 @@ def editinfo():
     parser.add_argument('resparams', type=str, required=True)
     parser.add_argument('des', type=str)
     parser.add_argument('domain', type=str, required=True)
+    parser.add_argument('id', type=int, required=True)
     #parser.add_argument('projectName', type=str, required=True)
+    #,args.get('projectName')
+    #,project_name=%s
     args = parser.parse_args()
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
     try:
-        cur.execute('update mock_config set title=%s,reqparams=%s,methods=%s,domain=%s,description=%s,resparams=%s,update_time=%s,project_name=%s where id=%s'
-                    ,(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'), args.get('des'), args.get('resparams'),datetime.now().strftime('%y-%m-%d %H:%M:%S'),args.get('projectName'),id))
+        conn = pymysql.connect(**config)
+        cur = conn.cursor()
+        cur.execute('update mock_config set title=%s,reqparams=%s,methods=%s,domain=%s,description=%s,resparams=%s,update_time=%s where id=%s',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'), args.get('des'), args.get('resparams'),datetime.now().strftime('%y-%m-%d %H:%M:%S'),args.get('id')))
         conn.commit()
         conn.close()
     except:
-        return jsonify({'msg': "fail", "remark": "save data fail"})
+        return jsonify({'msg': "fail", "remark": "编辑数据失败"})
     return jsonify({'msg': "ok", "remark": ""})
 
 @app.route('/selectinfo',methods=['GET'])
@@ -145,7 +148,7 @@ def selectinfo():
         key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams','project_name')
         d = [dict(zip(key, value)) for value in re]
     except:
-        return jsonify({'msg': "fail", "remark": "select data fail"})
+        return jsonify({'msg': "fail", "remark": "查询信息失败"})
     return jsonify({'msg': "ok", "remark": "", 'data':d})
 
 @app.route('/manage',methods=['POST'])
@@ -161,7 +164,7 @@ def manage():
         conn.commit()
         conn.close()
     except:
-        return jsonify({'msg': "fail", "remark": "select data fail"})
+        return jsonify({'msg': "fail", "remark": "查询信息失败"})
     return jsonify({'msg': "ok", "remark": ""})
 
 @app.route('/search',methods=['GET'])

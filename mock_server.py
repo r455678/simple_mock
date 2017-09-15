@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 from flask import jsonify, Flask,make_response,request
-import pymysql
+import pymysql,sys
 import ConfigParser
-import sys,json
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -40,7 +39,7 @@ def checkpath(domain,varsvalue,method):
     if size == 0:
         return jsonify({"msg": "请求方法不存在"})
     elif size1 == 0:
-        return jsonify({"msg": "请求模式不存在"})
+        return jsonify({"msg": "请求方法对应的请求模式不存在"})
     if len(varsvalue) == 0:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
@@ -57,8 +56,11 @@ def checkpath(domain,varsvalue,method):
         cur = conn.cursor()
         cur.execute('select reqparams,resparams,methods from mock_config where status=0 and domain=%s and methods=%s',(domain, method))
         reqparams = cur.fetchall()
-        varsvalue2 = reqparams[0][0]  # 数据库中的预期请求参数
-        if reqparams[0][2].lower()=='get':
+        if reqparams==():
+            return jsonify({"msg": u"请求方法和参数不匹配"})
+        else:
+            varsvalue2 = reqparams[0][0]  # 数据库中的预期请求参数
+        if reqparams[0][2].lower()=='get' or (reqparams[0][2].lower()=='post' and varsvalue1[0] != '}' and varsvalue1[-2] != '}'):
             arr = varsvalue2.split('&')
             for i in range(len(arr)):
                 arr[i] = arr[i] + '&'
@@ -67,16 +69,16 @@ def checkpath(domain,varsvalue,method):
             if str==varsvalue1:
                 return reqparams[0][1].encode("utf-8")
             if reqparams[0][0] == '':
-                return jsonify({"msg": "对应请求没有配置预期返回值"})
+                return jsonify({"msg": u"对应请求没有配置预期返回值"})
             else:
-                return jsonify({"msg": "请求方法和参数不匹配"})
+                return jsonify({"msg": u"请求方法和参数不匹配"})
         elif reqparams[0][2].lower()=='post':
             varsvalue1 = varsvalue1.replace("\t", "").replace("\r", "").strip()[:-1]
             varsvalue2 = varsvalue2.replace("\t", "").replace("\r", "").strip()
             if varsvalue1 == varsvalue2:
                 return reqparams[0][1].encode("utf-8")
         else:
-            return jsonify({"msg": "暂不支持该类型请求方法"})
+            return jsonify({"msg": u"暂不支持该类型请求方法"})
 
 
 def getvar(value):
