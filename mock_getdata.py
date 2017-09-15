@@ -59,7 +59,6 @@ def writeexcel(data0,data1,data2,data3,data4):
     table.write(rows, 3, data2)
     table.write(rows, 4, data3)
     table.write(rows, 5, data4)
-    print data2
     for i in range(0, 8):
         table.col(i).width = 256 * 35
     excel.save(filename)
