@@ -28,9 +28,7 @@ config ={
         'charset':'utf8',
         }
 
-def checkpath(domain,varsvalue,method):
-    method=method.lower()
-    varsvalue.sort()
+def checksize(domain,method):
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     size = cur.execute('select * from mock_config where domain=%s', (domain))  # 校验domain是否存在
@@ -40,6 +38,11 @@ def checkpath(domain,varsvalue,method):
         return jsonify({"msg": "请求方法不存在"})
     elif size1 == 0:
         return jsonify({"msg": "请求方法对应的请求模式不存在"})
+
+def checkpath(domain,varsvalue,method):
+    method=method.lower()
+    varsvalue.sort()
+    checksize(domain,method)#判断请求方法和模式是否匹配
     if len(varsvalue) == 0:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
@@ -54,32 +57,37 @@ def checkpath(domain,varsvalue,method):
         varsvalue1=getvar(varsvalue)#实际请求
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        cur.execute('select reqparams,resparams,methods from mock_config where status=0 and domain=%s and methods=%s',(domain, method))
+        cur.execute('select reqparams,resparams,methods,ischeck from mock_config where status=0 and domain=%s and methods=%s',(domain, method))
         reqparams = cur.fetchall()
-        if reqparams==():
+        if reqparams == ():
             return jsonify({"msg": u"请求方法和参数不匹配"})
+        elif reqparams[0][3]==1:
+            return reqparams[0][1]
         else:
-            varsvalue2 = reqparams[0][0]  # 数据库中的预期请求参数
-        if reqparams[0][2].lower()=='get' or (reqparams[0][2].lower()=='post' and varsvalue1[0] != '}' and varsvalue1[-2] != '}'):
-            arr = varsvalue2.split('&')
-            for i in range(len(arr)):
-                arr[i] = arr[i] + '&'
-            arr.sort(reverse=True)
-            str = ''.join(arr)[0:-1]
-            if str==varsvalue1:
-                return reqparams[0][1].encode("utf-8")
-            if reqparams[0][0] == '':
-                return jsonify({"msg": u"对应请求没有配置预期返回值"})
-            else:
-                return jsonify({"msg": u"请求方法和参数不匹配"})
-        elif reqparams[0][2].lower()=='post':
-            varsvalue1 = varsvalue1.replace("\t", "").replace("\r", "").strip()[:-1]
-            varsvalue2 = varsvalue2.replace("\t", "").replace("\r", "").strip()
-            if varsvalue1 == varsvalue2:
-                return reqparams[0][1].encode("utf-8")
-        else:
-            return jsonify({"msg": u"暂不支持该类型请求方法"})
+            rdata=checkparams(reqparams,varsvalue1)
+        return rdata
 
+def checkparams(reqparams,varsvalue1):
+    varsvalue2 = reqparams[0][0]  # 数据库中的预期请求参数
+    if reqparams[0][2].lower()=='get' or (reqparams[0][2].lower()=='post' and varsvalue1[0] != '}' and varsvalue1[-2] != '}'):
+        arr = varsvalue2.split('&')
+        for i in range(len(arr)):
+            arr[i] = arr[i] + '&'
+        arr.sort(reverse=True)
+        str = ''.join(arr)[0:-1]
+        if str==varsvalue1:
+            return reqparams[0][1].encode("utf-8")
+        if reqparams[0][0] == '':
+            return jsonify({"msg": u"对应请求没有配置预期返回值"})
+        else:
+            return jsonify({"msg": u"请求方法和参数不匹配"})
+    elif reqparams[0][2].lower()=='post':
+        varsvalue1 = varsvalue1.replace("\t", "").replace("\r", "").strip()[:-1]
+        varsvalue2 = varsvalue2.replace("\t", "").replace("\r", "").strip()
+        if varsvalue1 == varsvalue2:
+            return reqparams[0][1].encode("utf-8")
+    else:
+        return jsonify({"msg": u"暂不支持该类型请求方法"})
 
 def getvar(value):
     value=value[::-1]
@@ -95,10 +103,6 @@ def getvar(value):
                 f = f + 1
     return result[0:-1]
 
-def getre(path,varsvalue):
-    r = checkpath(path, varsvalue, request.method)
-    return r
-
 @app.route('/<path:path>/<path:path1>', methods=['GET','POST'])
 def get_all_task(path,path1):
     npath='/' + path + '/' + path1
@@ -106,7 +110,7 @@ def get_all_task(path,path1):
         varsvalue = request.args.items()
     else:
         varsvalue = request.form.items()
-    r=getre(npath,varsvalue)
+    r = checkpath(npath, varsvalue, request.method)
     return r
 
 @app.route('/<path:path>', methods=['GET','POST'])
@@ -116,7 +120,7 @@ def get_all_task1(path):
         varsvalue = request.args.items()
     else:
         varsvalue = request.form.items()
-    r = getre(path, varsvalue)
+    r = checkpath(path, varsvalue, request.method)
     return r
 
 @app.errorhandler(404)

@@ -13,7 +13,8 @@ CREATE TABLE `mock_config` (
   `description` varchar(50) DEFAULT NULL,
   `resparams` varchar(500) DEFAULT NULL,
   `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `status` int(5) DEFAULT NULL,
+  `status` int(1) DEFAULT NULL,
+  `ischeck` int(1) DEFAULT NULL,
   `project_name` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8;
