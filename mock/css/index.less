@@ -14,6 +14,9 @@ a{text-decoration: none;}
 .myckbox-normal{ background: url(../img/index.png) 0 0 no-repeat;}
 .myckbox-visited{ background: url(../img/index.png) 0 -14px no-repeat;}
 .elli{white-space:nowrap; text-overflow:ellipsis; -o-text-overflow:ellipsis; overflow: hidden; }
+.left{ float: left;}
+.mr5{ margin-right: 5px;}
+.no-padding{ padding: 0!important;}
 .pop-bg{
     position: fixed;
     z-index:1000;
@@ -64,11 +67,12 @@ a{text-decoration: none;}
         &.on{ background: @them-blue;.activa-bar{ float: right;}}
         &.off{ background: #a8a8a8;.activa-bar{ float: left;}}
     }
-    .edit{ display: block; width: 14px; height: 18px; background: url(../img/index.png) 0 -37px no-repeat; cursor: pointer;}
+    .edit{ display: inline-block; width: 14px; height: 18px; background: url(../img/index.png) 0 -37px no-repeat; cursor: pointer;}
     .edit:hover{ background: url(../img/index.png) 0 -56px no-repeat;}
     .tr-detail{
         .dt-cont{ border-top: 1px dashed @border-color; font-size: 14px;}
     }
+    .copy{ display: inline-block; width: 14px; height: 17px; background: url(../img/index.png) 0 -77px; cursor: pointer;}
 }
 .page{
     float: right;
@@ -137,5 +141,4 @@ a{text-decoration: none;}
     }
     .sure{ float: left; width: 92px; line-height: 30px; .btn; margin: 0 10px 0 269px;}
     .cancle{ float: left; width: 92px; line-height: 30px; .btn;}
-    
 }

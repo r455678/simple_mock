@@ -85,12 +85,13 @@ function dataShow(allData,currentPage){
 				'<td width="20%" class="describle">'+justObj(data_i.description)+'</td>'+
 				'<td width="15%">'+justObj(data_i.updateTime)+'</td>'+
 				'<td width="10%">'+
-				'	<i class='+'"'+((data_i.status==0)? 'activation on' : "activation off")+'"'+' onclick="activation();">'+
+				'	<i class='+'"'+((data_i.status==0)? 'activation left on' : "activation off")+'"'+' onclick="activation();">'+
 				'		<i class="activa-bar"></i>'+
 				'	</i>'+
 				'</td>'+
-				'<td width="5%">'+
-				'	<i class="edit" onclick="edit();"></i>'+
+				'<td width="5%" class="no-padding">'+
+				'	<i class="edit left mr5" onclick="edit();"></i>'+
+				'	<i class="copy left" onclick="copyHandle();"></i>'+
 				'</td>'+
 			'</tr>'+
 			'<tr class="hidden">'+
@@ -232,6 +233,7 @@ function del(){
 				alert(res.remark);
 				return;
 			}
+			alert("删除成功！");
 			getAllData();
 		}
 	})
@@ -255,6 +257,25 @@ function edit(){
 	$(".ctrl-pop .r-reqparams").val(_reqparams=="-"?"":_reqparams);
 	$(".ctrl-pop .r-resparams").val(_resparams=="-"?"":_resparams);
 	$(".ctrl-pop .r-des").val(_des=="-"?"":_des);
+}
+//复制
+function copyHandle(){
+	var _id=$(event.target).closest("td").attr("id");
+	$.ajax({
+		type:"post",
+		url:myUrl+"/copy ",
+		async:true,
+		dataType:"json",
+		data:{id:_id},
+		success:function(res){			
+			if(res.msg!="ok"){
+				alert(res.remark);
+				return;
+			}
+			alert("复制成功！");
+			getAllData();
+		}
+	})
 }
 
 

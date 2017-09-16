@@ -50,15 +50,22 @@ def import_device():
         bk = xlrd.open_workbook(excelName, encoding_override="utf-8")
         sh = bk.sheets()[0]  # 因为Excel里只有sheet1有数据，如果都有可以使用注释掉的语句
         ncols = sh.ncols#列
+        nrows = sh.nrows#行
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        for j in range(ncols+1):
-            if j > ncols:
+        for j in range(1,nrows):
+            if j+1 == nrows:
                 return jsonify({'msg': "ok", "remark": "上传成功"})
             else:
+                lvalues = sh.row_values(j+1)
+                if lvalues[6]=='是':
+                    ischeck = 0
+                elif lvalues[6]=='否':
+                    ischeck = 1
+                else :
+                    ischeck = 1
                 try:
-                    lvalues = sh.row_values(j+1)
-                    cur.execute('insert into mock_config values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(None,lvalues[0],lvalues[4],lvalues[3],lvalues[2],lvalues[6],lvalues[5],datetime.now(),0,lvalues[1]))
+                    cur.execute('insert into mock_config values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(None,lvalues[0],lvalues[4],lvalues[3],lvalues[2],lvalues[7],lvalues[5],datetime.now(),0,ischeck,lvalues[1]))
                     conn.commit()
                 except:
                     return jsonify({'msg': "fail", "remark": "解析失败"})
@@ -76,15 +83,14 @@ def query_user():
     parser.add_argument('resparams', type=str, required=True)
     parser.add_argument('des', type=str)
     parser.add_argument('domain', type=str,required=True)
-    #parser.add_argument('projectName', type=str,required=True)
-    #,args.get('project_name')
-    #,project_name
+    parser.add_argument('projectName', type=str,required=True)
+    parser.add_argument('ischeck', type=int, required=True)
     args = parser.parse_args()
     try:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status) '
-                    'values (%s,%s,%s,%s,%s,%s,%s) ',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'),args.get('des'),args.get('resparams'),0))
+        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status,,ischeck,project_name,) '
+                    'values (%s,%s,%s,%s,%s,%s,%s) ',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'),args.get('des'),args.get('resparams'), 0 , args.get('ischeck'),args.get('projectName')))
         conn.commit()
         conn.close()
     except :
@@ -120,14 +126,15 @@ def editinfo():
     parser.add_argument('des', type=str)
     parser.add_argument('domain', type=str, required=True)
     parser.add_argument('id', type=int, required=True)
-    #parser.add_argument('projectName', type=str, required=True)
-    #,args.get('projectName')
-    #,project_name=%s
+    parser.add_argument('projectName', type=str, required=True)
+    parser.add_argument('ischeck', type=int, required=True)
     args = parser.parse_args()
     try:
         conn = pymysql.connect(**config)
         cur = conn.cursor()
-        cur.execute('update mock_config set title=%s,reqparams=%s,methods=%s,domain=%s,description=%s,resparams=%s,update_time=%s where id=%s',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'), args.get('des'), args.get('resparams'),datetime.now().strftime('%y-%m-%d %H:%M:%S'),args.get('id')))
+        cur.execute('update mock_config set title=%s,reqparams=%s,methods=%s,domain=%s,description=%s,resparams=%s,update_time=%s ,project_name=%s ,ischeck=%s'
+                    'where id=%s',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'), args.get('des'), args.get('resparams'),
+                                   datetime.now().strftime('%y-%m-%d %H:%M:%S'),args.get('projectName'),args.get('ischeck'),args.get('id')))
         conn.commit()
         conn.close()
     except:
@@ -142,10 +149,10 @@ def selectinfo():
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute('select title,reqparams,methods,domain,description,resparams,project_name from mock_config where id=%s',(args.get('id')))
+        cur.execute('select title,reqparams,methods,domain,description,resparams,project_name,ischeck from mock_config where id=%s',(args.get('id')))
         re= cur.fetchall()
         conn.close()
-        key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams','project_name')
+        key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams','project_name','ischeck')
         d = [dict(zip(key, value)) for value in re]
     except:
         return jsonify({'msg': "fail", "remark": "查询信息失败"})
@@ -227,7 +234,7 @@ def copy():
     cur = conn.cursor()
     try:
         cur.execute("insert into mock_config(title,reqparams,methods,domain,description,resparams,update_time,status,project_name) "
-                    "select title,reqparams,methods,domain,description,resparams,update_time,status,project_name from mock_config where id=%s",args.get('id'))
+                    "select title,reqparams,methods,domain,description,resparams,update_time,status,project_name,ischeck from mock_config where id=%s",args.get('id'))
         conn.commit()
         conn.close()
     except:

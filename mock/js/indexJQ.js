@@ -5,6 +5,14 @@ $(function(){
 	projectNameList(); //获取项目名称list
 	//add btn
 	$("#add-btn").click(function(){
+		$(".r-title").val("");
+		$(".r-method option").removeProp("selected");
+		$(".r-method .method-sed").prop("selected","selected");
+		$(".r-reqparams").val("");
+		$(".r-resparams").val("");
+		$(".r-des").val("");
+		$(".r-domain").val("");
+		
 		$(".ctrl-pop .pop-tit").text("+ 新增");
 		$(".ctrl-pop").removeClass("hidden");
 		$(".sure").attr("data-type","add");
@@ -42,6 +50,8 @@ $(function(){
         		return;
         	}
             alert('上传成功！');
+            getAllData();  //初始化页面数据
+			projectNameList(); //获取项目名称list
         }
     });
 
