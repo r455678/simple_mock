@@ -198,10 +198,12 @@ function add(){
 			id:_id?_id:"",
 			title:$(".r-title").val(),
 			method:$(".r-method option:selected").text(),
+			projectName:$(".source-object").val(),
 			reqparams:$(".r-reqparams").val(),
 			resparams:$(".r-resparams").val(),
 			des:$(".r-des").val(),
-			domain:$(".r-domain").val()
+			domain:$(".r-domain").val(),
+			ischeck:$(".isJYrequst").hasClass("myckbox-visited") ? 1 : 0
 		},
 		success:function(res){			
 			if(res.msg!="ok"){
@@ -260,7 +262,7 @@ function edit(){
 }
 //复制
 function copyHandle(){
-	var _id=$(event.target).closest("td").attr("id");
+	var _id=$(event.target).closest("tr").attr("id");
 	$.ajax({
 		type:"post",
 		url:myUrl+"/copy ",

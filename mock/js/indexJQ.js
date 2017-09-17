@@ -12,6 +12,8 @@ $(function(){
 		$(".r-resparams").val("");
 		$(".r-des").val("");
 		$(".r-domain").val("");
+		$(".r-reqparams").val("");
+		$(".isJYrequst").removeClass("myckbox-visited").addClass("myckbox-normal");
 		
 		$(".ctrl-pop .pop-tit").text("+ 新增");
 		$(".ctrl-pop").removeClass("hidden");

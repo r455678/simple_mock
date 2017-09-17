@@ -362,7 +362,7 @@ a {
   top: 50%;
   z-index: 1001;
   width: 740px;
-  height: 506px;
+  height: 590px;
   margin-left: -370px;
   margin-top: -253px;
   border-radius: 8px;
@@ -433,7 +433,11 @@ a {
   border-radius: 4px;
   resize: none;
 }
-@media -sass-debug-info{filename{font-family:file\:\/\/I\:\/mock_server\/simple_mock\/simple_mock\/mock\/css\/index\.less}line{font-family:\00003142}}
+@media -sass-debug-info{filename{font-family:file\:\/\/I\:\/mock_server\/simple_mock\/simple_mock\/mock\/css\/index\.less}line{font-family:\00003140}}
+.ctrl-pop .pop .pop-cont dd .isJYrequst {
+  margin-top: 10px;
+}
+@media -sass-debug-info{filename{font-family:file\:\/\/I\:\/mock_server\/simple_mock\/simple_mock\/mock\/css\/index\.less}line{font-family:\00003143}}
 .ctrl-pop .pop .sure {
   float: left;
   width: 92px;
@@ -447,7 +451,7 @@ a {
   background: #108ee9;
   margin: 0 10px 0 269px;
 }
-@media -sass-debug-info{filename{font-family:file\:\/\/I\:\/mock_server\/simple_mock\/simple_mock\/mock\/css\/index\.less}line{font-family:\00003143}}
+@media -sass-debug-info{filename{font-family:file\:\/\/I\:\/mock_server\/simple_mock\/simple_mock\/mock\/css\/index\.less}line{font-family:\00003144}}
 .ctrl-pop .pop .cancle {
   float: left;
   width: 92px;

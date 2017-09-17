@@ -86,11 +86,10 @@ def query_user():
     parser.add_argument('projectName', type=str,required=True)
     parser.add_argument('ischeck', type=int, required=True)
     args = parser.parse_args()
+    conn = pymysql.connect(**config)
+    cur = conn.cursor()
     try:
-        conn = pymysql.connect(**config)
-        cur = conn.cursor()
-        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status,,ischeck,project_name,) '
-                    'values (%s,%s,%s,%s,%s,%s,%s) ',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'),args.get('des'),args.get('resparams'), 0 , args.get('ischeck'),args.get('projectName')))
+        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status,ischeck,project_name) values (%s,%s,%s,%s,%s,%s,%s,%s,%s) ',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'),args.get('des'),args.get('resparams'), 0 , args.get('ischeck'),args.get('projectName')))
         conn.commit()
         conn.close()
     except :
@@ -102,7 +101,6 @@ def delinfo():
     parser = reqparse.RequestParser()
     parser.add_argument('id[]', type=str, required=True,action='append')
     args = parser.parse_args()
-    print args
     id=args.get('id[]')
     conn = pymysql.connect(**config)
     cur = conn.cursor()
@@ -133,7 +131,7 @@ def editinfo():
         conn = pymysql.connect(**config)
         cur = conn.cursor()
         cur.execute('update mock_config set title=%s,reqparams=%s,methods=%s,domain=%s,description=%s,resparams=%s,update_time=%s ,project_name=%s ,ischeck=%s'
-                    'where id=%s',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'), args.get('des'), args.get('resparams'),
+                    ' where id=%s',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'), args.get('des'), args.get('resparams'),
                                    datetime.now().strftime('%y-%m-%d %H:%M:%S'),args.get('projectName'),args.get('ischeck'),args.get('id')))
         conn.commit()
         conn.close()
@@ -233,7 +231,7 @@ def copy():
     conn = pymysql.connect(**config)
     cur = conn.cursor()
     try:
-        cur.execute("insert into mock_config(title,reqparams,methods,domain,description,resparams,update_time,status,project_name) "
+        cur.execute("insert into mock_config(title,reqparams,methods,domain,description,resparams,update_time,status,project_name,ischeck) "
                     "select title,reqparams,methods,domain,description,resparams,update_time,status,project_name,ischeck from mock_config where id=%s",args.get('id'))
         conn.commit()
         conn.close()
