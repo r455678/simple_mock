@@ -1,8 +1,9 @@
-var myUrl="http://127.0.0.1:5202";
+
 
 $(function(){
 	getAllData();  //初始化页面数据
 	projectNameList(); //获取项目名称list
+	$("#fileupload").attr("data-url",myUrl+'/import_excel');  //上传文件请求地址
 	//add btn
 	$("#add-btn").click(function(){
 		$(".r-title").val("");
