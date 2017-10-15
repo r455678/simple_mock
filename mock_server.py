@@ -1,238 +1,135 @@
-#!/usr/bin/env python
-# coding:utf8
-# author andre.yang
+# -*- coding: utf-8 -*-
+from flask import jsonify, Flask,make_response,request
+import pymysql,sys
+import ConfigParser
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
-import requests,xlrd,sys,pymysql, robot ,logging ,json
-from urllib import urlencode
-from robot.libraries.BuiltIn import BuiltIn
+app = Flask(__name__)
 
-default_encoding = 'utf-8'
-if sys.getdefaultencoding() != default_encoding:
-    reload(sys)
-    sys.setdefaultencoding(default_encoding)
+cf = ConfigParser.ConfigParser()
+path = 'db.config'
+cf.read(path)
+cf.read(path)
+secs = cf.sections()
+_host= cf.get("database","dbhost")
+_port= cf.get("database","dbport")
+_dbname=cf.get("database","dbname")
+_dbuser=cf.get("database","dbuser")
+_dbpassword=cf.get("database","dbpassword")
+_path=cf.get("path","filepath")
 
+config ={
+        'host':_host,
+        'port':int(_port),
+        'user':_dbuser,
+        'passwd':_dbpassword,
+        'db':_dbname,
+        'charset':'utf8',
+        }
 
-class httpautotest():
-    ROBOT_LIBRARY_SCOPE = 'Global'
+def checksize(domain,method):
+    conn = pymysql.connect(**config)
+    cur = conn.cursor()
+    size = cur.execute('select * from mock_config where domain=%s', (domain))  # 校验domain是否存在
+    size1 = cur.execute('select * from mock_config where methods=%s', (method))  # 校验method是否存在
+    conn.close()
+    if size == 0:
+        return jsonify({"msg": "请求方法不存在"})
+    elif size1 == 0:
+        return jsonify({"msg": "请求方法对应的请求模式不存在"})
 
-    def __init__(self):
-        self._cache = robot.utils.ConnectionCache('No sessions created')
-        self.builtin = BuiltIn()
-
-    def _utf8_urlencode(self, data):
-        if type(data) is unicode:
-            return data.encode('utf-8')
-
-        if not type(data) is dict:
-            return data
-
-        utf8_data = {}
-        for k, v in data.iteritems():
-            utf8_data[k] = unicode(v).encode('utf-8')
-        return urlencode(utf8_data)
-
-    def is_json(self,myjson):
-        try:
-            json.loads(myjson)
-        except ValueError:
-            return False
-        return True
-
-    """
-    打开excel
-    """
-
-    def _openexcel(self, excelurl, sheetname):
-        bk = xlrd.open_workbook(excelurl)
-        try:
-            sh = bk.sheet_by_name(sheetname)
-            return sh
-        except:
-            logging.info("no sheet in %s named %s" % (excelurl, sheetname))
-            exit()
-
-    """
-    读取excel参数
-    """
-
-    def _getexcelparas(self, sheetname, exceldir, num):
-        sh = self._openexcel(exceldir, sheetname)
-        try:
-            row_data = sh.row_values(int(num))
-        except Exception, e:
-            logging.info(u"所选列没有数据")
-        return row_data
-
-    # 数据校验方法
-    def _checkdb(self, host, dbname, username, password, port, excelurl, sheetname, rownum):
-        """
-        'host': dbhost
-        'dbname': database's name
-        'username': dbusername
-        'password': dbpassword
-
-        'port': dbport
-
-        'excelurl': exp D://downloads/case.xls
-
-        sheetname: sheet's name exp sheet1
-
-        rownum :row num
-        """
-        conn = pymysql.connect(
-            host=host,
-            port=int(port),
-            user=username,
-            passwd=password,
-            db=dbname,
-            charset='utf8'
-        )
+def checkpath(domain,varsvalue,method):
+    method=method.lower()
+    varsvalue.sort()
+    checksize(domain,method)#判断请求方法和模式是否匹配
+    if len(varsvalue) == 0:
+        conn = pymysql.connect(**config)
         cur = conn.cursor()
-        ischeckdb = self._getexcelparas(sheetname, excelurl, rownum)[5]
-        sqlscript = self._getexcelparas(sheetname, excelurl, rownum)[6]
-        expectedvalue = self._getexcelparas(sheetname, excelurl, rownum)[7]
-        if ischeckdb == 1:
-            size = cur.execute(sqlscript)
-            if size > 0:
-                logging.info(u"查询出数据条数为 " + str(size) + u" 条")
-                info = cur.fetchmany(1)
-                infol = list(info[0])
-                arr = expectedvalue.split(',')
-                for i in range(len(infol)):
-                    infol[i] = str(infol[i]).encode("utf-8")
-                for i in range(len(arr)):
-                    arr[i] = str(arr[i]).encode("utf-8")
-                if infol.sort() == arr.sort():
-                    logging.info(u"数据库校验通过")
-                else:
-                    logging.info(u"数据库校验未通过,预期值: " + str(expectedvalue).replace('.0', ''))
-                    logging.info(u"实际值: " + str(info[0][0]))
-                    raise AssertionError()
-            else:
-                logging.info(u"数据库中没有查询到数据")
-                raise AssertionError
-
-        elif ischeckdb == 'FALSE' or ischeckdb == '' or ischeckdb == 0:
-            logging.info(u"不进入SQL判断")
-        else:
-            logging.info(u'第' + str(rownum) + u'行' + u'是否检查数据库输入不合法')
-            raise RuntimeError
-        cur.close()
-        conn.commit()
+        cur.execute('select resparams from mock_config where status=0 and domain=%s and methods=%s', (domain, method))
+        resparams = cur.fetchone()
         conn.close()
-
-    # 数据校验
-    def _checkdata(self, domain, descontent, remethod, payload, do):
-        """
-        'domain': server host
-        'descontent': wish content
-        'remethod': request method
-        'payload': params
-        'do': request do
-        """
-        descontent = descontent.replace("\n", "").replace(" ", "").replace("\t", "").replace("\r", "").encode("utf-8")
-        payload = payload.encode("utf-8")
-        logging.info(u'请求参数为:' + str(payload))
-        isjson=self.is_json(payload)
-        if remethod.upper() == 'GET':
-            res = requests.get(domain + do, params=payload, timeout=10)
-        elif remethod.upper() == 'POST' and isjson==True:
-            res = requests.post(domain + do, data=payload, headers={'Content-Type': 'application/json'}, timeout=10)
-            resd = res.content.decode("utf-8")
-            return resd
-        elif remethod.upper() == 'POST' and isjson==False:
-            res = requests.post(domain + do, params=payload , timeout=10)
-            resd = res.content.decode("utf-8")
-            return resd
+        if resparams[0] == '':
+            return jsonify({"msg": "对应请求没有配置预期返回值"})
         else:
-            logging.info(u'请求方式错误')
-            logging.info(u'请求方式只能为get/post,现为' + remethod)
-            raise AssertionError
-        if res.status_code != 200:
-            logging.info(u"请求失败,statuscode非200")
-            raise AssertionError
-        resreplace = res.content.replace(" ", "").replace("\n", "").replace("\t", "").replace("\r", "").encode("utf-8")
-        if descontent == resreplace:
-            logging.info(u"接口断言通过")
+            return resparams[0].encode("utf-8")
+    else:
+        varsvalue1=getvar(varsvalue)#实际请求
+        conn = pymysql.connect(**config)
+        cur = conn.cursor()
+        cur.execute('select reqparams,resparams,methods,ischeck from mock_config where status=0 and domain=%s and methods=%s',(domain, method))
+        reqparams = cur.fetchall()
+        if reqparams == ():
+            return jsonify({"msg": u"请求方法和参数不匹配"})
+        elif reqparams[0][3]==1:
+            return reqparams[0][1]
         else:
-            logging.info(u"实际响应数据为:" + resreplace)
-            logging.info(u"接口断言与期望不符")
-            logging.info(u"预期响应结果为:" + descontent)
-            raise AssertionError
-        return res.content.decode("utf-8")
+            rdata=checkparams(reqparams,varsvalue1)
+        return rdata
 
-    def todict(self, db):
-        try:
-            redb=eval('dict(%s)' % db)
-        except:
-            return (u'数据库配置错误')
-        return redb
-
-    # case执行方法
-    def testcase(self, domain, sheetname, excelurl, rownum, db):
-
-        """
-        'domain': host
-
-        'sheetname': sheet's name exp sheet1
-
-        'excelurl': exp D://downloads/case.xls
-
-        'rownum': row number
-
-        'db': database config
-
-        Examples:
-        | `Testcase` | http://192.168.20.154 | zkk | ${CURDIR}${/}case1${/}case1.xlsx | 1 | ${db} |
-        """
-        logging.info(u'用例名称: ' + self._getexcelparas(sheetname, excelurl, rownum)[0])
-        do = self._getexcelparas(sheetname, excelurl, rownum)[1]  # 方法名
-        remethod = self._getexcelparas(sheetname, excelurl, rownum)[2]  # 请求方式
-        payload = self._getexcelparas(sheetname, excelurl, rownum)[3]  # 请求参数
-        descontent = self._getexcelparas(sheetname, excelurl, rownum)[4]  # 预期结果
-        res = self._checkdata(domain, descontent, remethod, payload, do)
-        db = self.todict(db)
-        self._checkdb(db['host'], db['db'], db['user'], db['passwd'], db['port'], excelurl, sheetname, rownum)
-        return res
-
-    def testcase_one(self, domain, sheetname, excelurl, rownum, *args):
-        do = self._getexcelparas(sheetname, excelurl, rownum)[1]
-        remethod = self._getexcelparas(sheetname, excelurl, rownum)[2]
-        payload = self._getexcelparas(sheetname, excelurl, rownum)[3]
-        res = self._getres(domain, remethod, payload, do, *args)
-        return res
-
-    def to_json(self, content, pretty_print=False):
-        """ Convert a string to a JSON object
-        `content` String content to convert into JSON
-        'pretty_print' If defined, will output JSON is pretty print format
-        """
-        content = self._utf8_urlencode(content)
-        if pretty_print:
-            json_ = self._json_pretty_print(content)
+def checkparams(reqparams,varsvalue1):
+    varsvalue2 = reqparams[0][0]  # 数据库中的预期请求参数
+    if reqparams[0][2].lower()=='get' or (reqparams[0][2].lower()=='post' and varsvalue1[0] != '}' and varsvalue1[-2] != '}'):
+        arr = varsvalue2.split('&')
+        for i in range(len(arr)):
+            arr[i] = arr[i] + '&'
+        arr.sort(reverse=True)
+        str = ''.join(arr)[0:-1]
+        if str==varsvalue1:
+            return reqparams[0][1].encode("utf-8")
+        if reqparams[0][0] == '':
+            return jsonify({"msg": u"对应请求没有配置预期返回值"})
         else:
-            json_ = json.loads(content)
-        return json_
+            return jsonify({"msg": u"请求方法和参数不匹配"})
+    elif reqparams[0][2].lower()=='post':
+        varsvalue1 = varsvalue1.replace("\t", "").replace("\r", "").strip()[:-1]
+        varsvalue2 = varsvalue2.replace("\t", "").replace("\r", "").strip()
+        if varsvalue1 == varsvalue2:
+            return reqparams[0][1].encode("utf-8")
+    else:
+        return jsonify({"msg": u"暂不支持该类型请求方法"})
 
-    def _getres(self, domain, remethod, payload, do, *args):
-        payload = payload.encode("utf-8")
-        if len(args) == 0:
-            payload_b = ''
-        else:
-            payload_b = args[0]
-        if remethod.upper() == 'GET':
-            res = requests.get(domain + do, params=payload + '&' + payload_b, headers={'Content-Type': 'application/json'}, timeout=10)
-            resd = res.content.decode("utf-8")
-            return resd
-        elif remethod.upper() == 'POST' and payload[0]=='{':
-            res = requests.post(domain + do, data=payload , headers={'Content-Type': 'application/json'}, timeout=10)
-            resd = res.content.decode("utf-8")
-            return resd
-        elif remethod.upper() == 'POST' and payload[0]=='{':
-            res = requests.post(domain + do, params=payload + '&' + payload_b, timeout=10)
-            resd = res.content.decode("utf-8")
-            return resd
-        else:
-            logging.info(u'请求方式错误')
-            logging.info(u'请求方式只能为get/post,现为' + remethod)
-            raise AssertionError
+def getvar(value):
+    value=value[::-1]
+    result = ''
+    f = 0
+    for i in range(len(value)):
+        for j in range(len(value[i])):
+            if f % 2 == 0:
+                result = result + value[i][j] + '='
+                f = f + 1
+            else:
+                result = result + value[i][j] + '&'
+                f = f + 1
+    return result[0:-1]
+
+@app.route('/<path:path>/<path:path1>', methods=['GET','POST'])
+def get_all_task(path,path1):
+    npath='/' + path + '/' + path1
+    if request.method=='GET':
+        varsvalue = request.args.items()
+    else:
+        varsvalue = request.form.items()
+    r = checkpath(npath, varsvalue, request.method)
+    return r
+
+@app.route('/<path:path>', methods=['GET','POST'])
+def get_all_task1(path):
+    path='/'+path
+    if request.method=='GET':
+        varsvalue = request.args.items()
+    else:
+        varsvalue = request.form.items()
+    r = checkpath(path, varsvalue, request.method)
+    return r
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'msg':'fail','error': '404 Not found'}), 404)
+
+@app.errorhandler(500)
+def not_found(error):
+    return make_response("程序报错，可能是因为叙利亚战争导致", 500)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0',debug=True, port=5201,threaded=True)
