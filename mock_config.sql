@@ -22,4 +22,4 @@ CREATE TABLE `mock_config` (
 -- ----------------------------
 -- Records of mock_config
 -- ----------------------------
-INSERT INTO `mock_config` VALUES ('1', '请求登陆11', 'var1=1&var2=2&var3=3', 'post', '/login/manageLogin2', 'var1=1&var2=2&var3=3', '{\"status\":\"fail\",\"msg\":\"111用户名或密码错误,密码输错超过5次将被锁定哦！已输错1次\",\"data\":\"\",\"externData\":null}', '2017-08-10 17:54:05', '0', '营销平台');
+INSERT INTO `mock_config` VALUES (338, '实名认证', '{\n	\"transType\":\"300002\",\n}', 'post', '/auth/bankCardVerified', '11', '{\n    \"success\": false,\n    \"errcode\": \"99999998\",\n    \"errmessage\": \"此身份信息已经实名认证\",\n    \"data\": null\n}', '2017-9-18 13:16:17', 0, 0, '支付核心');
