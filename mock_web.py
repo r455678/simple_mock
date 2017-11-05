@@ -1,39 +1,36 @@
 #coding=utf-8
-from  flask import Flask,request,jsonify,make_response,abort
+from  flask import Flask,request,jsonify,make_response
 from flask_cors import *
-import pymysql,xlrd
 from flask_restful import reqparse
 from datetime import datetime
-import ConfigParser
-import sys
+import sys,xlrd
+from flask_sqlalchemy import SQLAlchemy
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-cf = ConfigParser.ConfigParser()
-path = 'db.config'
-cf.read(path)
-cf.read(path)
-secs = cf.sections()
-_host= cf.get("database","dbhost")
-_port= cf.get("database","dbport")
-_dbname=cf.get("database","dbname")
-_dbuser=cf.get("database","dbuser")
-_dbpassword=cf.get("database","dbpassword")
-_path=cf.get("path","filepath")
-
-config ={
-        'host':_host,
-        'port':int(_port),
-        'user':_dbuser,
-        'passwd':_dbpassword,
-        'db':_dbname,
-        'charset':'utf8',
-        }
-
-save_path=_path
+save_path='D:\\'
 ALLOWED_EXTENSIONS = ['xls', 'xlsx']
 app=Flask(__name__)
 CORS(app, supports_credentials=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:123456@192.168.3.42:3306/test'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=True
+#app.config['SQLALCHEMY_ECHO']=True
+db = SQLAlchemy(app)
+
+class mock_config(db.Model):
+    """定义数据模型"""
+    __tablename__ = 'mock_config'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50))
+    reqparams = db.Column(db.String(500))
+    methods = db.Column(db.String(50))
+    domain = db.Column(db.String(50))
+    description = db.Column(db.String(50))
+    resparams = db.Column(db.String(500))
+    update_time = db.Column(db.TIMESTAMP)
+    status = db.Column(db.Integer)
+    ischeck = db.Column(db.Integer)
+    project_name = db.Column(db.String(20))
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -49,27 +46,26 @@ def import_device():
         excelName = save_path+filename
         bk = xlrd.open_workbook(excelName, encoding_override="utf-8")
         sh = bk.sheets()[0]  # 因为Excel里只有sheet1有数据，如果都有可以使用注释掉的语句
-        ncols = sh.ncols#列
         nrows = sh.nrows#行
-        conn = pymysql.connect(**config)
-        cur = conn.cursor()
         for j in range(1,nrows):
             if j+1 == nrows:
                 return jsonify({'msg': "ok", "remark": "上传成功"})
             else:
                 lvalues = sh.row_values(j+1)
                 if lvalues[6]=='是':
-                    ischeck = 0
+                    ischeckr = 0
                 elif lvalues[6]=='否':
-                    ischeck = 1
+                    ischeckr = 1
                 else :
-                    ischeck = 1
+                    ischeckr = 1
                 try:
-                    cur.execute('insert into mock_config values (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(None,lvalues[0],lvalues[4],lvalues[3],lvalues[2],lvalues[7],lvalues[5],datetime.now(),0,ischeck,lvalues[1]))
-                    conn.commit()
+                    mock = mock_config(id=None, title=lvalues[0], reqparams=lvalues[4],methods=lvalues[3], domain=lvalues[2],
+                                       description=lvalues[7], resparams=lvalues[5], update_time=datetime.now(),
+                                       status=0, ischeck=ischeckr, project_name=lvalues[1])
+                    db.session.add(mock)
+                    db.session.commit()
                 except:
                     return jsonify({'msg': "fail", "remark": "解析失败"})
-        conn.close()
         return jsonify({'msg': "ok", "remark": "上传成功"})
     else:
         return jsonify({'msg': "fail", "remark": "上传文件不符合格式要求"})
@@ -86,12 +82,11 @@ def query_user():
     parser.add_argument('projectName', type=str,required=True)
     parser.add_argument('ischeck', type=int, required=True)
     args = parser.parse_args()
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
     try:
-        cur.execute('insert into mock_config (title,reqparams,methods,domain,description,resparams,status,ischeck,project_name) values (%s,%s,%s,%s,%s,%s,%s,%s,%s) ',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'),args.get('des'),args.get('resparams'), 0 , args.get('ischeck'),args.get('projectName')))
-        conn.commit()
-        conn.close()
+        mock=mock_config(id=None,title=args.get('title'),reqparams=args.get('reqparams'),methods=args.get('method'),domain=args.get('domain'),
+                     description=args.get('des'),resparams=args.get('resparams'),update_time=None,status=0,ischeck=args.get('ischeck'),project_name=args.get('projectName'))
+        db.session.add(mock)
+        db.session.commit()
     except :
         return jsonify({'msg': "fail", "remark": "新增数据失败"})
     return jsonify({'msg': "ok","remark":""})
@@ -102,14 +97,12 @@ def delinfo():
     parser.add_argument('id[]', type=str, required=True,action='append')
     args = parser.parse_args()
     id=args.get('id[]')
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
     try:
         for index in range(len(id)):
             idd=id[index]
-            cur.execute('delete from mock_config where id=%s',(idd))
-        conn.commit()
-        conn.close()
+            mock=mock_config.query.filter_by(id=idd).first()
+            db.session.delete(mock)
+            db.session.commit()
     except :
         return jsonify({'msg': "fail", "remark": "删除数据失败"})
     return jsonify({'msg': "ok","remark":""})
@@ -128,33 +121,21 @@ def editinfo():
     parser.add_argument('ischeck', type=int, required=True)
     args = parser.parse_args()
     try:
-        conn = pymysql.connect(**config)
-        cur = conn.cursor()
-        cur.execute('update mock_config set title=%s,reqparams=%s,methods=%s,domain=%s,description=%s,resparams=%s,update_time=%s ,project_name=%s ,ischeck=%s'
-                    ' where id=%s',(args.get('title'),args.get('reqparams'),args.get('method'),args.get('domain'), args.get('des'), args.get('resparams'),
-                                   datetime.now().strftime('%y-%m-%d %H:%M:%S'),args.get('projectName'),args.get('ischeck'),args.get('id')))
-        conn.commit()
-        conn.close()
-    except:
-        return jsonify({'msg': "fail", "remark": "编辑数据失败"})
+        mock=mock_config.query.filter_by(id=args.get('id')).first()
+        mock.title=args.get('title')
+        mock.reqparams = args.get('reqparams')
+        mock.methods = args.get('method')
+        mock.description = args.get('des')
+        mock.domain = args.get('domain')
+        mock.projectName = args.get('projectName')
+        mock.resparams = args.get('resparams')
+        mock.project_name = args.get('projectName')
+        mock.ischeck = args.get('ischeck')
+        mock.update_time=datetime.now().strftime('%y-%m-%d %H:%M:%S')
+        db.session.commit()
+    except :
+        return jsonify({'msg': "fail", "remark": "修改数据失败"})
     return jsonify({'msg': "ok", "remark": ""})
-
-@app.route('/selectinfo',methods=['GET'])
-def selectinfo():
-    parser = reqparse.RequestParser()
-    parser.add_argument('id', type=int, required=True)
-    args = parser.parse_args()
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
-    try:
-        cur.execute('select title,reqparams,methods,domain,description,resparams,project_name,ischeck from mock_config where id=%s',(args.get('id')))
-        re= cur.fetchall()
-        conn.close()
-        key = ('title', 'reqparams', 'methods', 'domain', 'description', 'resparams','project_name','ischeck')
-        d = [dict(zip(key, value)) for value in re]
-    except:
-        return jsonify({'msg': "fail", "remark": "查询信息失败"})
-    return jsonify({'msg': "ok", "remark": "", 'data':d})
 
 @app.route('/manage',methods=['POST'])
 def manage():
@@ -162,14 +143,12 @@ def manage():
     parser.add_argument('id', type=int, required=True)
     parser.add_argument('status', type=int, required=True)
     args = parser.parse_args()
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
     try:
-        cur.execute('update mock_config set status=%s where id=%s',(args.get('status'),args.get('id')))
-        conn.commit()
-        conn.close()
+        mock=mock_config.query.filter(mock_config.id == args.get('id') and mock_config.status == args.get('status')).first()
+        mock.status=args.get('status')
+        db.session.commit()
     except:
-        return jsonify({'msg': "fail", "remark": "查询信息失败"})
+        return jsonify({'msg': "fail", "remark": "修改数据失败"})
     return jsonify({'msg': "ok", "remark": ""})
 
 @app.route('/search',methods=['GET'])
@@ -178,65 +157,43 @@ def search():
     parser.add_argument('title', type=str)
     parser.add_argument('project_name', type=str, required=True)
     args = parser.parse_args()
-    try:
-        conn = pymysql.connect(**config)
-        cur = conn.cursor()
-        if args.get('project_name') == str(0):
-            sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s"
-            value=args.get('title').strip()
-            cur.execute(sql, value+'%%')
-        else:
-            sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s and project_name=%s"
-            values = (args.get('title')+'%%' .strip(),args.get('project_name'))
-            cur.execute(sql,values)
-        re= cur.fetchall()
-        conn.close()
-        key = ('id','status','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
-        d = [dict(zip(key, value)) for value in re]
-    except:
-        return jsonify({'msg': "fail", "remark": "select data fail"})
+    if args.get('project_name') == str(0):
+        conn = db.session.connection()
+        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s"
+        value = args.get('title').strip()
+        re=conn.execute(sql, '%%'+ value + '%%')
+        conn.close
+    else:
+        conn = db.session.connection()
+        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s and project_name=%s"
+        values = ('%%'+args.get('title') + '%%'.strip(), args.get('project_name'))
+        re=conn.execute(sql, values)
+        conn.close
+    key = ('id','status','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
+    d = [dict(zip(key, value)) for value in re]
     return jsonify({'msg': "ok", "remark": "", "data": d})
-
-@app.route('/searchall',methods=['GET'])
-def searchall():
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
-    try:
-        cur.execute("select id,title,reqparams,methods,domain,description,resparams,status,date_format(update_time,'%Y-%m-%d %H:%i:%s') from mock_config")
-        re= cur.fetchall()
-        conn.close()
-        key = ('id','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','status','updateTime')
-        d = [dict(zip(key, value)) for value in re]
-    except:
-        return jsonify({'msg': "fail", "remark": "select data fail"})
-    return jsonify({'msg': "ok", "remark": "","data": d})
 
 @app.route('/searchproject',methods=['GET'])
 def searchproject():
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
     try:
-        cur.execute("SELECT DISTINCT(project_name) from mock_config")
-        re= cur.fetchall()
-        conn.close()
+        project_name = db.session.query(mock_config.project_name.distinct()).all()
     except:
-        return jsonify({'msg': "fail", "remark": "select data fail"})
-    return jsonify({'msg': "ok", "remark": "","data": re})
+        return jsonify({'msg': "fail", "remark": "查询项目数据失败"})
+    return jsonify({'msg': "ok", "remark": "","data": project_name})
 
 @app.route('/copy',methods=['POST'])
 def copy():
     parser = reqparse.RequestParser()
     parser.add_argument('id', type=int, required=True)
     args = parser.parse_args()
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
     try:
-        cur.execute("insert into mock_config(title,reqparams,methods,domain,description,resparams,update_time,status,project_name,ischeck) "
-                    "select title,reqparams,methods,domain,description,resparams,update_time,status,project_name,ischeck from mock_config where id=%s",args.get('id'))
-        conn.commit()
-        conn.close()
+        mock=mock_config.query.filter_by(id=args.get('id')).first()
+        mock1=mock_config(id=None,title=mock.title,reqparams=mock.reqparams,methods=mock.methods,domain=mock.domain,description=mock.description
+                            ,resparams=mock.resparams,update_time=mock.update_time,status=mock.update_time,ischeck=mock.ischeck,project_name=mock.project_name)
+        db.session.add(mock1)
+        db.session.commit()
     except:
-        return jsonify({'msg': "fail", "remark": "select data fail"})
+        return jsonify({'msg': "fail", "remark": "复制项目数据失败"})
     return jsonify({'msg': "ok", "remark": ""})
 
 @app.errorhandler(404)
