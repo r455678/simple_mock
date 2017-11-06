@@ -1,91 +1,83 @@
 # -*- coding: utf-8 -*-
 from flask import jsonify, Flask,make_response,request
-import pymysql,sys
-import ConfigParser
+import sys,ConfigParser
+from flask_sqlalchemy import SQLAlchemy
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 app = Flask(__name__)
 
-cf = ConfigParser.ConfigParser()
-path = 'db.config'
-cf.read(path)
-cf.read(path)
-secs = cf.sections()
-_host= cf.get("database","dbhost")
-_port= cf.get("database","dbport")
-_dbname=cf.get("database","dbname")
-_dbuser=cf.get("database","dbuser")
-_dbpassword=cf.get("database","dbpassword")
-_path=cf.get("path","filepath")
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:123456@192.168.3.42:3306/test'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=True
+db = SQLAlchemy(app)
 
-config ={
-        'host':_host,
-        'port':int(_port),
-        'user':_dbuser,
-        'passwd':_dbpassword,
-        'db':_dbname,
-        'charset':'utf8',
-        }
+class mock_config(db.Model):
+    """定义数据模型"""
+    __tablename__ = 'mock_config'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(50))
+    reqparams = db.Column(db.String(500))
+    methods = db.Column(db.String(50))
+    domain = db.Column(db.String(50))
+    description = db.Column(db.String(50))
+    resparams = db.Column(db.String(500))
+    update_time = db.Column(db.TIMESTAMP)
+    status = db.Column(db.Integer)
+    ischeck = db.Column(db.Integer)
+    project_name = db.Column(db.String(20))
 
 def checksize(domain,method):
-    conn = pymysql.connect(**config)
-    cur = conn.cursor()
-    size = cur.execute('select * from mock_config where domain=%s', (domain))  # 校验domain是否存在
-    size1 = cur.execute('select * from mock_config where methods=%s', (method))  # 校验method是否存在
-    conn.close()
-    if size == 0:
-        return jsonify({"msg": "请求方法不存在"})
-    elif size1 == 0:
-        return jsonify({"msg": "请求方法对应的请求模式不存在"})
+    mock = mock_config.query.filter_by(domain=domain).first()# 校验domain是否存在
+    mock1 = mock_config.query.filter(mock_config.domain == domain,mock_config.methods == method).first() # 校验method是否存在
+    if  not mock :
+        return jsonify({"msg": u"请求方法不存在"})
+    elif not mock1 :
+        return jsonify({"msg": u"请求方法对应的请求模式不存在"})
 
 def checkpath(domain,varsvalue,method):
     method=method.lower()
     varsvalue.sort()
-    checksize(domain,method)#判断请求方法和模式是否匹配
+    re=checksize(domain,method)#判断请求方法和模式是否匹配
+    if re != None:
+        return re
     if len(varsvalue) == 0:
-        conn = pymysql.connect(**config)
-        cur = conn.cursor()
-        cur.execute('select resparams from mock_config where status=0 and domain=%s and methods=%s', (domain, method))
-        resparams = cur.fetchone()
-        conn.close()
-        if resparams[0] == '':
-            return jsonify({"msg": "对应请求没有配置预期返回值"})
+        mock_data = mock_config.query.filter(mock_config.methods == method,mock_config.status ==0,mock_config.domain ==domain).first()
+        resparams=mock_data.resparams
+        if resparams== '':
+            return jsonify({"msg": u"对应请求没有配置预期返回值"})
         else:
-            return resparams[0].encode("utf-8")
+            return resparams.encode("utf-8")
     else:
-        varsvalue1=getvar(varsvalue)#实际请求
-        conn = pymysql.connect(**config)
-        cur = conn.cursor()
-        cur.execute('select reqparams,resparams,methods,ischeck from mock_config where status=0 and domain=%s and methods=%s',(domain, method))
-        reqparams = cur.fetchall()
-        if reqparams == ():
+        varsvalue1=getvar(varsvalue)
+        mock_data = mock_config.query.filter(mock_config.methods == method, mock_config.status == 0,
+                                             mock_config.domain == domain).first()
+        if not varsvalue1:
             return jsonify({"msg": u"请求方法和参数不匹配"})
-        elif reqparams[0][3]==1:
-            return reqparams[0][1]
+        elif mock_data.ischeck==1:
+            return mock_data.resparams
         else:
-            rdata=checkparams(reqparams,varsvalue1)
+            rdata=checkparams(mock_data,varsvalue1)
         return rdata
 
-def checkparams(reqparams,varsvalue1):
-    varsvalue2 = reqparams[0][0]  # 数据库中的预期请求参数
-    if reqparams[0][2].lower()=='get' or (reqparams[0][2].lower()=='post' and varsvalue1[0] != '}' and varsvalue1[-2] != '}'):
+def checkparams(mock_data,varsvalue1):
+    varsvalue2 = mock_data.reqparams  # 数据库中的预期请求参数
+    if mock_data.methods.lower()=='get' or (mock_data.reqparams.lower()=='post' and varsvalue1[0] != '}' and varsvalue1[-2] != '}'):
         arr = varsvalue2.split('&')
         for i in range(len(arr)):
             arr[i] = arr[i] + '&'
         arr.sort(reverse=True)
         str = ''.join(arr)[0:-1]
-        if str==varsvalue1:
-            return reqparams[0][1].encode("utf-8")
-        if reqparams[0][0] == '':
+        if str==varsvalue1 and mock_data.resparams != '':
+            return mock_data.resparams.encode("utf-8")
+        elif mock_data.resparams == '':
             return jsonify({"msg": u"对应请求没有配置预期返回值"})
         else:
             return jsonify({"msg": u"请求方法和参数不匹配"})
-    elif reqparams[0][2].lower()=='post':
+    elif mock_data.methods.lower()=='post':
         varsvalue1 = varsvalue1.replace("\t", "").replace("\r", "").strip()[:-1]
         varsvalue2 = varsvalue2.replace("\t", "").replace("\r", "").strip()
         if varsvalue1 == varsvalue2:
-            return reqparams[0][1].encode("utf-8")
+            return mock_data.resparams.encode("utf-8")
     else:
         return jsonify({"msg": u"暂不支持该类型请求方法"})
 
@@ -129,7 +121,7 @@ def not_found(error):
 
 @app.errorhandler(500)
 def not_found(error):
-    return make_response("程序报错，可能是因为叙利亚战争导致", 500)
+    return make_response(u"程序报错，可能是因为叙利亚战争导致", 500)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True, port=5201,threaded=True)
