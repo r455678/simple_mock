@@ -3,7 +3,7 @@ from  flask import Flask,request,jsonify,make_response
 from flask_cors import *
 from flask_restful import reqparse
 from datetime import datetime
-import sys,xlrd
+import sys,xlrd,mock_server
 from flask_sqlalchemy import SQLAlchemy
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -12,7 +12,7 @@ save_path='D:\\'
 ALLOWED_EXTENSIONS = ['xls', 'xlsx']
 app=Flask(__name__)
 CORS(app, supports_credentials=True)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:123456@192.168.3.42:3306/test'
+app.config['SQLALCHEMY_DATABASE_URI'] = mock_server.getconfig()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=True
 #app.config['SQLALCHEMY_ECHO']=True
 db = SQLAlchemy(app)
