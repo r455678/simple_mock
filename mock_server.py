@@ -5,9 +5,15 @@ from flask_sqlalchemy import SQLAlchemy
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-app = Flask(__name__)
+def getconfig():
+    cf = ConfigParser.ConfigParser()
+    path = 'db.config'
+    cf.read(path)
+    _dburi = cf.get("database","dbhost")
+    return _dburi
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://root:123456@192.168.3.42:3306/test'
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = getconfig()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=True
 db = SQLAlchemy(app)
 
