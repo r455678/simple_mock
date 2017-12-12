@@ -159,14 +159,14 @@ def search():
     args = parser.parse_args()
     if args.get('project_name') == str(0):
         conn = db.session.connection()
-        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s"
-        value = args.get('title').strip()
-        re=conn.execute(sql, '%%'+ value + '%%')
+        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s or domain like %s"
+        values = ('%%'+args.get('title') + '%%'.strip(),'%%'+args.get('title') + '%%'.strip())
+        re=conn.execute(sql, values)
         conn.close
     else:
         conn = db.session.connection()
-        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s and project_name=%s"
-        values = ('%%'+args.get('title') + '%%'.strip(), args.get('project_name'))
+        sql = "select id,status,title,reqparams,methods,domain,description,resparams,date_format(update_time,'%%Y-%%m-%%d %%H:%%i:%%s') from mock_config where title like %s and project_name=%s or domain like %s"
+        values = ('%%'+args.get('title') + '%%'.strip(), args.get('project_name'),args.get('title').strip())
         re=conn.execute(sql, values)
         conn.close
     key = ('id','status','title', 'reqparams', 'methods', 'domain', 'description', 'resparams','updateTime')
