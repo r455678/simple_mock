@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 from flask import jsonify, Flask,make_response,request
-import sys,ConfigParser
+import sys,ConfigParser,requests,json
 from flask_sqlalchemy import SQLAlchemy
 reload(sys)
 sys.setdefaultencoding('utf-8')
+
+#如果在mock_server中没有数据是否进行转发 0为是，非0为否
+relay = 0
+#转发服务器地址
+host1 = 'http://127.0.0.1:5202'
+
 
 def getconfig():
     cf = ConfigParser.ConfigParser()
@@ -36,9 +42,9 @@ def checksize(domain,method):
     mock = mock_config.query.filter_by(domain=domain).first()# 校验domain是否存在
     mock1 = mock_config.query.filter(mock_config.domain == domain,mock_config.methods == method).first() # 校验method是否存在
     if  not mock :
-        return jsonify({"msg": u"请求方法不存在"})
+        return jsonify({"status":"fail","msg": u"请求方法不存在"})
     elif not mock1 :
-        return jsonify({"msg": u"请求方法对应的请求模式不存在"})
+        return jsonify({"status":"fail","msg": u"请求方法对应的请求模式不存在"})
 
 def checkpath(domain,varsvalue,method):
     method=method.lower()
@@ -50,7 +56,7 @@ def checkpath(domain,varsvalue,method):
         mock_data = mock_config.query.filter(mock_config.methods == method,mock_config.status ==0,mock_config.domain ==domain).first()
         resparams=mock_data.resparams
         if resparams== '':
-            return jsonify({"msg": u"对应请求没有配置预期返回值"})
+            return jsonify({"status":"fail","msg": u"对应请求没有配置预期返回值"})
         else:
             return resparams.encode("utf-8")
     else:
@@ -58,7 +64,7 @@ def checkpath(domain,varsvalue,method):
         mock_data = mock_config.query.filter(mock_config.methods == method, mock_config.status == 0,
                                              mock_config.domain == domain).first()
         if not varsvalue1:
-            return jsonify({"msg": u"请求方法和参数不匹配"})
+            return jsonify({"status":"fail","msg": u"请求方法和参数不匹配"})
         elif mock_data.ischeck==1:
             return mock_data.resparams
         else:
@@ -76,16 +82,16 @@ def checkparams(mock_data,varsvalue1):
         if str==varsvalue1 and mock_data.resparams != '':
             return mock_data.resparams.encode("utf-8")
         elif mock_data.resparams == '':
-            return jsonify({"msg": u"对应请求没有配置预期返回值"})
+            return jsonify({"status":"fail","msg": u"对应请求没有配置预期返回值"})
         else:
-            return jsonify({"msg": u"请求方法和参数不匹配"})
+            return jsonify({"status":"fail","msg": u"请求方法和参数不匹配"})
     elif mock_data.methods.lower()=='post':
         varsvalue1 = varsvalue1.replace("\t", "").replace("\r", "").strip()[:-1]
         varsvalue2 = varsvalue2.replace("\t", "").replace("\r", "").strip()
         if varsvalue1 == varsvalue2:
             return mock_data.resparams.encode("utf-8")
     else:
-        return jsonify({"msg": u"暂不支持该类型请求方法"})
+        return jsonify({"status":"fail","msg": u"暂不支持该类型请求方法"})
 
 def getvar(value):
     value=value[::-1]
@@ -101,6 +107,16 @@ def getvar(value):
                 f = f + 1
     return result[0:-1]
 
+def getres(request,npath,host):
+    varsvalue = request.args.items()
+    params = getvar(varsvalue)
+    url1 = host + npath + '?'
+    if request.method == 'GET':
+        re = requests.get(url1, params=params)
+    else:
+        re = requests.post(url1, params=params)
+    return re,params
+
 @app.route('/<path:path>/<path:path1>', methods=['GET','POST'])
 def get_all_task(path,path1):
     npath='/' + path + '/' + path1
@@ -109,7 +125,11 @@ def get_all_task(path,path1):
     else:
         varsvalue = request.form.items()
     r = checkpath(npath, varsvalue, request.method)
-    return r
+    if json.loads(r.data)['status']=='fail' and  relay==0:
+        re1 = getres(request, npath, host1)
+        return re1[0].content
+    else:
+        return r
 
 @app.route('/<path:path>', methods=['GET','POST'])
 def get_all_task1(path):
@@ -119,7 +139,11 @@ def get_all_task1(path):
     else:
         varsvalue = request.form.items()
     r = checkpath(path, varsvalue, request.method)
-    return r
+    if json.loads(r.data)['status'] == 'fail' and relay == 0:
+        re1 = getres(request, path, host1)
+        return re1[0].content
+    else:
+        return r
 
 @app.errorhandler(404)
 def not_found(error):
